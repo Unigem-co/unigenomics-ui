@@ -1,0 +1,33 @@
+@import '../../variables.scss';
+
+#form {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background-color: $black-background;
+    border-radius: 10px;
+    color: white;
+    padding: 10px 20px;
+    height: fit-content;
+    max-height: 100%;
+    .form-field {
+        justify-content: flex-start;
+        width: 40%;
+        margin: 0 10px 10px 10px;
+        height: fit-content;
+        #input,
+        .textarea-input,
+        .select {
+            margin-top: 10px;
+        }
+    }
+
+    .form-actions {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 10px 20px;
+    }
+}

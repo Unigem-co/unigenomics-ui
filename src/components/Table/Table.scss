@@ -1,0 +1,76 @@
+@import '../../variables.scss';
+
+.table-scroll {
+    background-color: $black-background;
+    border-radius: 10px;
+    overflow: auto;
+    height: 100%;
+    width: 50%;
+
+    #table {
+        position: relative;
+        color: white;
+        min-width: 100%;
+        padding: 10px;
+        max-height: 100%;
+        
+        thead {
+            border-radius: 10px;
+            color: white;
+            .table-row-header {
+                th {
+                    top: 0px;
+                    left: 0px;
+                    position: sticky;
+                    background-color: $unigem-green;
+                    z-index: 1;
+                }
+                th:first-child {
+                    border-radius: 10px 0 0px 10px;
+                }
+                th:last-child {
+                    border-radius: 0 10px 10px 0;
+                }
+            }
+            .search-header {
+                th { 
+                    text-align: start;
+                    top: 0px;
+                    left: 0px;
+                    position: sticky;
+                    .search-input {
+                        max-width: 300px;
+                    }
+                }
+            }
+        }
+
+        td,
+        th {
+            padding: 5px 15px;
+        }
+
+        tr {
+            height: 60px;
+            text-align: center;
+        }
+
+        .table-row-data {
+            &:hover {
+                background-color: $unigem-green;
+                
+            }
+            td:first-child {
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+            }
+            td:last-child {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-top-right-radius: 5px;
+                border-bottom-right-radius: 5px;
+            }
+        }
+    }
+}

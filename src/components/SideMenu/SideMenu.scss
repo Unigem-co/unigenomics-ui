@@ -1,0 +1,14 @@
+@import '../../variables.scss';
+
+.side-menu {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    padding: 10px 20px;
+    background-color: $black-background;
+    color: white;
+    border-radius: 10px;
+    .side-menu-icon {
+        margin: 10px 10px 20px 10px;
+    }
+}

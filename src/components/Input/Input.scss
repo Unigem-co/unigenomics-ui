@@ -1,0 +1,24 @@
+#input {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    height: 30px;
+    padding: 0 5px;
+    border-radius: 5px;
+    column-gap: 5px;
+    input {
+        border: none;
+        text-decoration: none;
+        flex: 1;
+        &:focus-visible {
+            outline: none;
+        }
+    }
+
+    &[aria-disabled="true"] {
+        background-color: rgba($color: white, $alpha: 0.6);
+        input {
+            background-color: transparent;
+        }
+    }
+}

@@ -1,0 +1,30 @@
+.select {
+    font-family: inherit;
+    position: relative;
+    background-color: white;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+
+    .default-select {
+        // Additional resets for further consistency
+        background-color: transparent;
+        border: none;
+        padding: 0 1em 0 0;
+        margin: 0;
+        width: 100%;
+        font-family: inherit;
+        font-size: inherit;
+        cursor: inherit;
+        line-height: inherit;
+        outline: none;
+        height: 100%;
+        padding: 5px 10px;
+    }
+
+    .default-select::-ms-expand {
+        display: none;
+    }
+}

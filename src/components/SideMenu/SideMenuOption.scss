@@ -1,0 +1,25 @@
+@import '../../variables.scss';
+
+.side-menu-option {
+    .side-menu-option-description {
+        display: flex;
+        a {
+            color: white;
+            text-decoration: none;
+            width: 100%;
+        }
+    }
+    &:hover {
+        .side-menu-option-description {
+            a {
+                color: $unigem-green;
+            }
+        }
+        .side-menu-separator {
+            border-bottom: 1px solid $unigem-green;
+        }
+    }
+    .side-menu-separator {
+        border-bottom: 1px solid white;
+    }
+}
