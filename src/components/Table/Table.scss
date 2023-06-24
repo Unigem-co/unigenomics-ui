@@ -19,9 +19,6 @@
             color: white;
             .table-row-header {
                 th {
-                    top: 0px;
-                    left: 0px;
-                    position: sticky;
                     background-color: $unigem-green;
                     z-index: 1;
                 }
