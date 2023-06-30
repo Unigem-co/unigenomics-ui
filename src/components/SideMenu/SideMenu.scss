@@ -1,6 +1,7 @@
 @import '../../variables.scss';
 
 .side-menu {
+    position: relative;
     display: flex;
     flex-direction: column;
     row-gap: 10px;
@@ -10,5 +11,12 @@
     border-radius: 10px;
     .side-menu-icon {
         margin: 10px 10px 20px 10px;
+    }
+
+    .sign-out {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        padding: 10px;
     }
 }

@@ -13,6 +13,7 @@ body {
 
 #root {
   height: 100%;
+  position: relative;
 }
 
 code {
@@ -47,6 +48,7 @@ button {
   font-size: 18px;
   color: white;
   cursor: pointer;
+
   &:hover {
     border: 1px solid white;
   }
@@ -57,7 +59,7 @@ button.primary {
 }
 
 button.delete {
-  background-color: rgb(240, 40, 40);
+  background-color: $red;
 }
 
 button.transparent {

@@ -2,17 +2,33 @@ import React, { useEffect, useState } from 'react';
 import { request } from '../../utils/fetch';
 import Table from '../../components/Table';
 import Form from '../../components/Form';
+import { useSnackbar } from '../Snackbar/context';
+import AcceptModal from '../Modal/AcceptModal';
 
 const DependentData = props => {
 	const { endpoint, dependencies } = props;
-
 	const [data, setData] = useState([]);
 	const [schema, setSchema] = useState([]);
 	const [selectedValue, setSelectedValue] = useState({});
 	const [showForm, setShowForm] = useState(false);
+	const [showModal, setShowModal] = useState(false);
 
-	const onError = error => {
-		console.log(error);
+	const [, setSnackbar] = useSnackbar();
+
+	const onError = response => {
+		if (response.status === 403) {
+			setSnackbar({
+				show: true,
+				message: 'Tu sesión ha finalizado, intenta volver a iniciar sesión',
+				className: 'error',
+			});
+		} else {
+			setSnackbar({
+				show: true,
+				message: 'Ocurrió un error, intentalo más tarde',
+				className: 'error',
+			});
+		}
 	};
 
 	useEffect(() => {
@@ -39,14 +55,28 @@ const DependentData = props => {
 			request(
 				endpoint,
 				{ method: 'PUT', body: value },
-				d => setData([...data.filter(v => v.id !== value.id), descriptions]),
+				d => {
+					setData([...data.filter(v => v.id !== value.id), descriptions]);
+					setSnackbar({
+						show: true,
+						message: 'Registro actualizado',
+						className: 'success',
+					});
+				},
 				onError,
 			);
 		} else {
 			request(
 				endpoint,
 				{ method: 'POST', body: value },
-				d => setData([...data, { ...descriptions, id: d.id }]),
+				d => {
+					setData([...data, { ...descriptions, id: d.id }]);
+					setSnackbar({
+						show: true,
+						message: 'Registro creado',
+						className: 'success',
+					});
+				},
 				onError,
 			);
 		}
@@ -65,7 +95,14 @@ const DependentData = props => {
 		request(
 			endpoint,
 			{ method: 'DELETE', body: value },
-			d => setData(data.filter(v => v.id !== d.id)),
+			d => {
+				setData(data.filter(v => v.id !== d.id));
+				setSnackbar({
+					show: true,
+					message: 'Registro eliminado',
+					className: 'success',
+				});
+			},
 			onError,
 		);
 		setSelectedValue({});
@@ -83,7 +120,7 @@ const DependentData = props => {
 				columns={schema}
 				onCreate={onCreate}
 				onUpdate={onUpdate}
-				onDelete={onDelete}
+				onDelete={() => setShowModal(true)}
 			/>
 			{showForm && (
 				<Form
@@ -92,6 +129,16 @@ const DependentData = props => {
 					dependencies={dependencies}
 					onSave={onSave}
 					onCancel={onCancel}
+				/>
+			)}
+			{showModal && (
+				<AcceptModal
+					title='Eliminar'
+					message='Deseas eliminar este registro?'
+					onAccept={() => onDelete(selectedValue)}
+					onReject={() => {
+						setShowModal(false);
+					}}
 				/>
 			)}
 		</>

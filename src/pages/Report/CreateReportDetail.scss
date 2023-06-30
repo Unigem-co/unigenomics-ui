@@ -1,0 +1,47 @@
+@import '../../variables.scss';
+
+.create-report-detail {
+    display: flex;
+    flex-direction: column;
+    background-color: $black-background;
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    
+    .report-name {
+        margin: 20px 0;
+
+        label {
+            color: white;
+        }
+
+        #input {
+            margin: 10px 0;
+            width: 20%;
+        }
+    }
+
+    .report-detail-form {
+        display: flex;
+        padding-bottom: 100px;
+        width: 100%;
+        color: white;
+        gap: 120px 20px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        overflow-y: auto;
+        height: 90%;
+        .reference-snp {
+            width: 30%;
+        }
+    }
+
+    .report-detail-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex: 1;
+        width: 100%;
+        margin-top: 50px;
+    }
+}

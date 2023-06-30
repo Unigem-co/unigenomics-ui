@@ -4,9 +4,11 @@ import Input from '../Input';
 import './Form.scss';
 import TextArea from '../TextArea';
 import Select from '../Select';
+import AcceptModal from '../Modal/AcceptModal';
+import Password from '../Input/Password';
 
 const Form = props => {
-	const { schema, data, dependencies, onSave, onCancel } = props;
+	const { schema, data, dependencies, onSave, onCancel, disabled } = props;
 	const defaults = Object.keys(data).legnth
 		? data
 		: schema.reduce((prev, curr) => ({ ...prev, [curr.column_name]: null }), {});
@@ -52,21 +54,39 @@ const Form = props => {
 					<label>{translate(col.column_name)}</label>
 					{dependencies && dependencies[col?.column_name] ? (
 						<Select
+							disabled={disabled}
 							options={
 								dependencies[col?.column_name].data.map(v => ({
 									...v,
 									text: v[dependencies[col?.column_name].displayValue],
 								})) ?? []
 							}
-							onSelect={event => {
-								setValues({ ...values, [col.column_name]: event.target.value });
+							onSelect={value => {
+								setValues({ ...values, [col.column_name]: value });
 							}}
 							value={values[col.column_name]}
 						/>
 					) : col.data_type === 'text' ? (
 						<TextArea
 							type='text'
-							disabled={col?.column_name === 'id'}
+							disabled={col?.column_name === 'id' || disabled}
+							value={values[col.column_name]}
+							onChange={event =>
+								setValues({ ...values, [col.column_name]: event.target.value })
+							}
+						/>
+					) : col.data_type === 'date' ? (
+						<Input
+							disabled={disabled}
+							type='date'
+							value={values[col.column_name]}
+							onChange={event =>
+								setValues({ ...values, [col.column_name]: event.target.value })
+							}
+						/>
+					) : col.column_name === 'password' ? (
+						<Password
+							disabled={disabled}
 							value={values[col.column_name]}
 							onChange={event =>
 								setValues({ ...values, [col.column_name]: event.target.value })
@@ -74,7 +94,7 @@ const Form = props => {
 						/>
 					) : (
 						<Input
-							disabled={col?.column_name === 'id'}
+							disabled={col?.column_name === 'id' || disabled}
 							value={values[col.column_name]}
 							onChange={event =>
 								setValues({ ...values, [col.column_name]: event.target.value })

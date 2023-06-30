@@ -7,16 +7,19 @@ const Input = (props) => {
     placeholder,
     onChange,
     disabled,
+    type,
   } = props;
   return (
-    <div id="input" aria-disabled={disabled}>
-        <input 
-          value={value}
-          disabled={disabled} 
-          onChange={onChange} 
-          placeholder={placeholder}/>
-    </div>
-  )
+		<div id='input' aria-disabled={disabled}>
+			<input
+				value={value}
+				disabled={disabled}
+				onChange={onChange}
+				placeholder={placeholder}
+				type={type}
+			/>
+		</div>
+  );
 }
 
 export default Input

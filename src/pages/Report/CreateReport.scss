@@ -1,0 +1,32 @@
+@import '../../variables.scss';
+
+.create-report {
+    display: flex;
+    flex-direction: column;
+    width: 30%;
+    background-color: $black-background;
+    padding: 10px 15px;
+    border-radius: 10px;
+    color: white;
+
+    .select {
+        margin-top: 5px;
+        z-index: 1;
+    }
+
+    #form {
+        margin: 10px 0;
+        background-color: transparent;
+        flex: 1;
+        .form-actions {
+            display: none;
+        }
+    }
+
+    .create-report-options {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+    }
+}

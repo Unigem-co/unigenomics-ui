@@ -1,3 +1,5 @@
+@import '../../variables.scss';
+
 .select {
     font-family: inherit;
     position: relative;
@@ -7,21 +9,57 @@
     display: flex;
     align-items: center;
     border-radius: 5px;
+    min-width: 100px;
+    height: 35px;
 
-    .default-select {
-        // Additional resets for further consistency
-        background-color: transparent;
-        border: none;
-        padding: 0 1em 0 0;
-        margin: 0;
+    &.disabled {
+        cursor: not-allowed;
+        background-color: rgba($color: lightgray, $alpha: 0.95);
+    }
+
+    .select-display-value {
         width: 100%;
-        font-family: inherit;
-        font-size: inherit;
-        cursor: inherit;
-        line-height: inherit;
-        outline: none;
-        height: 100%;
-        padding: 5px 10px;
+        color: black;
+        padding: 0 5px;
+        display: flex;
+        flex-wrap: wrap;
+
+        i {
+            color: black;
+        }
+        span {
+            flex: 1;
+        }
+
+        &.disabled {
+            pointer-events: none;
+        }
+    }
+
+    .select-drop-down {
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 31px;
+        left: 0;
+        border-radius: 5px;
+        width: 100%;
+        border: 1px solid black;
+        z-index: 1;
+        
+        .select-option {
+            padding: 0 5px;
+            color: black;
+            &:hover {
+                background-color: rgba($color: $unigem-green, $alpha: 1);
+                color: white;
+            }
+        }
+        .selected {
+            background-color: rgba($color: $unigem-green, $alpha: 1);
+            color: white;
+        }
     }
 
     .default-select::-ms-expand {

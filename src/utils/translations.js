@@ -7,5 +7,19 @@ export const translate = (key) => ({
     interpretation: 'Interpretación',
     rs_name: 'RS',
     gen: 'Gen',
-    references: 'Referencias'
+    references: 'Referencias',
+    document_type: 'Tipo de Documento',
+    last_names: 'Apellidos',
+    document: 'Documento de identidad',
+    birdth_date: 'Fecha de Nacimiento',
+    role: 'Rol',
+    password: 'Contraseña',
 }[key] || key);
+
+export const snackbar = {
+    messages: {
+        updated: 'Registro actualizado',
+        created: 'Registro creado',
+        deleted: 'Registro eliminado',
+    },
+}

@@ -48,7 +48,11 @@ const Table = props => {
 				<tbody>
 					{tableData?.map((row, index) => (
 						<>
-							<tr key={`row-${index}`} className='table-row-data'>
+							<tr
+								key={`row-${index}`}
+								className='table-row-data'
+								onClick={() => onUpdate(row)}
+							>
 								{columns.map(column => (
 									<td
 										style={{
@@ -64,14 +68,22 @@ const Table = props => {
 								<td>
 									<button
 										className='primary'
-										onClick={() => onUpdate(row)}
+										onClick={event => {
+											event.stopPropagation();
+											event.preventDefault();
+											onUpdate(row);
+										}}
 										title='Editar'
 									>
 										<i className='bi bi-pencil-square'></i>
 									</button>
 									<button
 										className='delete'
-										onClick={() => onDelete(row)}
+										onClick={event => {
+											event.stopPropagation();
+											event.preventDefault();
+											onDelete(row);
+										}}
 										title='Eliminar'
 									>
 										<i className='bi bi-trash'></i>

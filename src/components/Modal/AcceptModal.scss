@@ -1,0 +1,18 @@
+.modal {
+    h1,
+    span {
+        padding: 0 0 15px 0;
+    }
+    .options {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+    }
+    .close-button {
+        color: black;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+}

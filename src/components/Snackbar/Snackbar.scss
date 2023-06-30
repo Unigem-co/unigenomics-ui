@@ -1,0 +1,60 @@
+@import '../../variables.scss';
+
+
+$snackbar-position: 60px;
+$snackbar-animation-position: -500px;
+
+@keyframes snackbar-keyframes-show {
+    from {
+        left: $snackbar-animation-position;
+        opacity: 0;
+    }
+
+    to {
+        left: $snackbar-position;
+        opacity: 1;
+    }
+}
+
+@keyframes snackbar-keyframes-hide {
+    from {
+        left: $snackbar-position;
+        opacity: 1;
+    }
+
+    to {
+        left: $snackbar-animation-position;
+        opacity: 0;
+    }
+}
+
+.snackbar {
+    position: absolute;
+    background-color: $black-background;
+    bottom: 20px;
+    left: $snackbar-position;
+    padding: 10px;
+    border-radius: 10px;
+
+    &.error {
+        background-color: rgba($color: $red, $alpha: 0.9);
+    }
+
+    &.success {
+        background-color: rgba($color: $unigem-green, $alpha: 0.9);
+    }
+
+    &.show {
+        opacity: 1;
+        animation: snackbar-keyframes-show 1s;
+    }
+
+    &.hide {
+        animation: snackbar-keyframes-hide 1s;
+        opacity: 0;
+    }
+
+    span {
+        color: white;
+    }
+}

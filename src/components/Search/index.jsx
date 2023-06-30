@@ -5,9 +5,10 @@ const Search = (props) => {
   const {
     placeholder,
     onChange,
+    onClick
   } = props;
   return (
-    <div className="search-input">
+    <div className="search-input" onClick={onClick}>
         <i className="bi bi-search"></i>
         <input onChange={onChange} placeholder={placeholder}/>
     </div>
