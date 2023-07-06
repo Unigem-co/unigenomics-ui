@@ -16,6 +16,7 @@ const deps = {
 const Interpretations = () => {
   const [genotypes, setGenotypes] = useState([]);
   const [referenceSnp, setReferenceSnp] = useState([]);
+  const [genotypeEffects, setGenotypeEffects] = useState([]);
   const [dependencies, setDependencies] = useState(deps);
 
   const onError = error => {
@@ -25,12 +26,14 @@ const Interpretations = () => {
   useEffect(() => {
 		request('genotype', { method: 'GET' }, d => setGenotypes(d), onError);
 		request('referenceSnp', { method: 'GET' }, d => setReferenceSnp(d), onError);
+		request('genotypeEffect', { method: 'GET' }, d => setGenotypeEffects(d), onError);
   }, []);
 
   useEffect(() => {
 		setDependencies({
 			genotype: { displayValue: 'genotype_name', data: genotypes },
 			reference_snp: { displayValue: 'rs_name', data: referenceSnp },
+			genotype_effect: { displayValue: 'name', data: genotypeEffects },
 		});
   }, [genotypes, referenceSnp]);
 

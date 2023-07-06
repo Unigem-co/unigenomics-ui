@@ -14,6 +14,9 @@ export const translate = (key) => ({
     birdth_date: 'Fecha de Nacimiento',
     role: 'Rol',
     password: 'Contraseña',
+    report_date: 'Fecha de Reporte',
+    sampling_date: 'Toma de Muestra',
+    genotype_effect: 'Efecto en Genotipo'
 }[key] || key);
 
 export const snackbar = {

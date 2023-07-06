@@ -10,10 +10,10 @@ import Login from './pages/Login';
 import RouteGuard from './components/RouteGuard';
 import { SnackbarProbider } from './components/Snackbar/context';
 import Users from './pages/Users';
-
+import ReportGenerator from './pages/ReportGenerator';
 
 const App = () => {
-  return (
+	return (
 		<SnackbarProbider>
 			<BrowserRouter>
 				<Routes>
@@ -27,11 +27,14 @@ const App = () => {
 						<Route path='/interpretations' element={<Interpretations />} />
 						<Route path='/snps' element={<Snps />} />
 					</Route>
-					<Route path='/user-report' element={<RouteGuard outlet={<Layout />} />} />
+					<Route
+						path='/user-report'
+						element={<ReportGenerator />}
+					/>
 				</Routes>
 			</BrowserRouter>
 		</SnackbarProbider>
-  );
-}
+	);
+};
 
 export default App;

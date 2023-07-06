@@ -10,7 +10,15 @@ const search = (data, searchedValue) => {
 };
 
 const Table = props => {
-	const { data, columns, onUpdate, onCreate, onDelete } = props;
+	const { 
+		data, 
+		columns, 
+		onUpdate, 
+		onCreate, 
+		onDelete,
+		onUpdateText,
+		onUpdateTooltip,
+	} = props;
 
 	const [searchedValue, setSearchedValue] = useState('');
 	const [tableData, setTableData] = useState(data);
@@ -28,15 +36,17 @@ const Table = props => {
 				<thead>
 					<tr className='table-row-header'>
 						{columns.map(column => (
-							<th key={column} colSpan={1}>
+							<th key={column.column_name} colSpan={1}>
 								{translate(column.column_name)}
 							</th>
 						))}
 						<th>
 							<span>Acciones</span>
-							<button className='transparent' onClick={onCreate} title='Nuevo'>
-								<i className='bi bi-plus-square'></i>
-							</button>
+							{onCreate ? (
+								<button className='transparent' onClick={onCreate} title='Nuevo'>
+									<i className='bi bi-plus-square'></i>
+								</button>
+							) : null}
 						</th>
 					</tr>
 					<tr className='search-header'>
@@ -66,28 +76,33 @@ const Table = props => {
 									</td>
 								))}
 								<td>
-									<button
-										className='primary'
-										onClick={event => {
-											event.stopPropagation();
-											event.preventDefault();
-											onUpdate(row);
-										}}
-										title='Editar'
-									>
-										<i className='bi bi-pencil-square'></i>
-									</button>
-									<button
-										className='delete'
-										onClick={event => {
-											event.stopPropagation();
-											event.preventDefault();
-											onDelete(row);
-										}}
-										title='Eliminar'
-									>
-										<i className='bi bi-trash'></i>
-									</button>
+									{onUpdate && (
+										<button
+											className='primary'
+											onClick={event => {
+												event.stopPropagation();
+												event.preventDefault();
+												onUpdate(row);
+											}}
+											title={onUpdateTooltip ? onUpdateTooltip : 'Editar'}
+										>
+											{onUpdateText ? onUpdateText : <i className='bi bi-pencil-square'></i>}
+											
+										</button>
+									)}
+									{onDelete && (
+										<button
+											className='delete'
+											onClick={event => {
+												event.stopPropagation();
+												event.preventDefault();
+												onDelete(row);
+											}}
+											title='Eliminar'
+										>
+											<i className='bi bi-trash'></i>
+										</button>
+									)}
 								</td>
 							</tr>
 						</>

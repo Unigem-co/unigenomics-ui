@@ -2,9 +2,13 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import Snackbar from '../Snackbar';
 
 const SnackbarContext = createContext({ snackbar: {}, setSnackbar: () => {} });
-
+const DEFAULT_TIME = 10000;
 const SnackbarProbider = ({ children }) => {
-	const [snackbar, setSnackbarState] = useState({ className: '', message: '', time: 5000 });
+	const [snackbar, setSnackbarState] = useState({
+		className: '',
+		message: '',
+		time: DEFAULT_TIME,
+	});
 	const [snackbarTimeout, setSnackbarTimeout] = useState(false);
 
 	const setSnackbar = snack => {
@@ -15,7 +19,7 @@ const SnackbarProbider = ({ children }) => {
 		if (snackbar.show) {
 			setSnackbarTimeout(
 				setTimeout(() => {
-					setSnackbar({ ...snackbar, show: false, message: '', time: 5000 });
+					setSnackbar({ ...snackbar, show: false, message: '', time: DEFAULT_TIME });
 				}, snackbar.time),
 			);
 		}

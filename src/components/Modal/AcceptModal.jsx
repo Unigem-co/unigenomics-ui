@@ -8,7 +8,7 @@ const AcceptModal = props => {
 		<Modal onClose={onReject}>
 			<h3>{title}</h3>
 			<button className='transparent close-button'>
-				<i className='bi bi-x-lg'></i>
+				<i className='bi bi-x'></i>
 			</button>
 			<span>{message}</span>
 			<div className='options'>

@@ -55,6 +55,7 @@
         .table-row-data {
             &:hover {
                 background-color: $unigem-green;
+                cursor: pointer;
                 
             }
             td:first-child {
