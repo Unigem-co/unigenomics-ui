@@ -4,6 +4,7 @@ import Table from '../../components/Table';
 import Form from '../../components/Form';
 import { useSnackbar } from '../Snackbar/context';
 import AcceptModal from '../Modal/AcceptModal';
+import Loading from '../Loading';
 
 const DependentData = props => {
 	const { endpoint, dependencies } = props;
@@ -12,10 +13,12 @@ const DependentData = props => {
 	const [selectedValue, setSelectedValue] = useState({});
 	const [showForm, setShowForm] = useState(false);
 	const [showModal, setShowModal] = useState(false);
+	const [isLoading, setIsLoading] = useState(false)
 
 	const [, setSnackbar] = useSnackbar();
 
 	const onError = response => {
+		setIsLoading(false);
 		if (response.status === 403) {
 			setSnackbar({
 				show: true,
@@ -32,7 +35,11 @@ const DependentData = props => {
 	};
 
 	useEffect(() => {
-		request(endpoint, { method: 'GET' }, d => setData(d), onError);
+		setIsLoading(true);
+		request(endpoint, { method: 'GET' }, d => {
+			setData(d);
+			setIsLoading(false);
+		}, onError);
 		request(`${endpoint}/schema`, { method: 'GET' }, d => setSchema(d), onError);
 	}, [endpoint]);
 
@@ -50,6 +57,7 @@ const DependentData = props => {
 		);
 
 	const onSave = async value => {
+		setIsLoading(true);
 		const descriptions = changeIdsToDescriptions(value);
 		if (value.id) {
 			request(
@@ -57,6 +65,7 @@ const DependentData = props => {
 				{ method: 'PUT', body: value },
 				d => {
 					setData([...data.filter(v => v.id !== value.id), descriptions]);
+					setIsLoading(false);
 					setSnackbar({
 						show: true,
 						message: 'Registro actualizado',
@@ -70,6 +79,7 @@ const DependentData = props => {
 				endpoint,
 				{ method: 'POST', body: value },
 				d => {
+					setIsLoading(false);
 					setData([...data, { ...descriptions, id: d.id }]);
 					setSnackbar({
 						show: true,
@@ -92,10 +102,12 @@ const DependentData = props => {
 		setShowForm(true);
 	};
 	const onDelete = async value => {
+		setIsLoading(true);
 		request(
 			endpoint,
 			{ method: 'DELETE', body: value },
 			d => {
+				setIsLoading(false);
 				setData(data.filter(v => v.id !== d.id));
 				setSnackbar({
 					show: true,
@@ -115,13 +127,14 @@ const DependentData = props => {
 
 	return (
 		<>
-			<Table
+			{isLoading && <Loading />}
+			{!isLoading && <Table
 				data={data}
 				columns={schema}
 				onCreate={onCreate}
 				onUpdate={onUpdate}
 				onDelete={() => setShowModal(true)}
-			/>
+			/>}
 			{showForm && (
 				<Form
 					data={selectedValue}

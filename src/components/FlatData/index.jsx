@@ -5,6 +5,7 @@ import Form from '../../components/Form';
 import { useSnackbar } from '../Snackbar/context';
 import AcceptModal from '../Modal/AcceptModal';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../Loading';
 
 const FlatData = props => {
 	const { endpoint } = props;
@@ -13,12 +14,15 @@ const FlatData = props => {
 	const [selectedRow, setSelectedRow] = useState({});
 	const [showForm, setShowForm] = useState(false);
 	const [showModal, setShowModal] = useState(false);
-  	const [, setSnackbar] = useSnackbar();
+	const [, setSnackbar] = useSnackbar();
+	const [isLoading, setisLoading] = useState(false);
+
 	const navigate = useNavigate();
 
 	const onError = response => {
-		if(response.status === 403) {
-			navigate('/login', {replace: true});
+		setisLoading(false);
+		if (response.status === 403) {
+			navigate('/login', { replace: true });
 			setSnackbar({
 				show: true,
 				message: 'Tu sesión ha finalizado, intenta volver a iniciar sesión',
@@ -30,12 +34,28 @@ const FlatData = props => {
 				message: 'Ocurrió un error, intentalo más tarde',
 				className: 'error',
 			});
-		}	
+		}
 	};
 
 	useEffect(() => {
-		request(endpoint, { method: 'GET' }, d => setData(d), onError);
-		request(`${endpoint}/schema`, { method: 'GET' }, s => setSchema(s), onError);
+		setisLoading(true);
+		request(
+			endpoint,
+			{ method: 'GET' },
+			d => {
+				setData(d);
+				setisLoading(false);
+			},
+			onError,
+		);
+		request(
+			`${endpoint}/schema`,
+			{ method: 'GET' },
+			s => {
+				setSchema(s);
+			},
+			onError,
+		);
 	}, [endpoint]);
 
 	const onCreate = () => {
@@ -51,6 +71,7 @@ const FlatData = props => {
 	};
 
 	const onDelete = async value => {
+		setisLoading(true);
 		await request(
 			endpoint,
 			{ method: 'DELETE', body: value },
@@ -62,6 +83,7 @@ const FlatData = props => {
 					message: 'Registro eliminado',
 					className: 'success',
 				});
+				setisLoading(false);
 			},
 			onError,
 		);
@@ -69,6 +91,7 @@ const FlatData = props => {
 	};
 
 	const onSave = async values => {
+		setisLoading(true);
 		if (values.id) {
 			await request(
 				endpoint,
@@ -76,11 +99,12 @@ const FlatData = props => {
 				() => {
 					setData([...data.filter(d => d.id !== values.id), values]);
 					setShowForm(false);
-          setSnackbar({
-            show: true,
-            message: 'Registro actualizado',
-            className: 'success',
-          });
+					setisLoading(false);
+					setSnackbar({
+						show: true,
+						message: 'Registro actualizado',
+						className: 'success',
+					});
 				},
 				onError,
 			);
@@ -91,11 +115,12 @@ const FlatData = props => {
 				res => {
 					setData([...data, { id: res.id, ...values }]);
 					setShowForm(false);
-          setSnackbar({
-            show: true,
-            message: 'Registro creado',
-            className: 'success',
-          });
+					setisLoading(false);
+					setSnackbar({
+						show: true,
+						message: 'Registro creado',
+						className: 'success',
+					});
 				},
 				onError,
 			);
@@ -106,13 +131,16 @@ const FlatData = props => {
 
 	return (
 		<>
-			<Table
-				data={data}
-				columns={schema}
-				onCreate={onCreate}
-				onUpdate={onUpdate}
-				onDelete={() => setShowModal(true)}
-			/>
+			{isLoading && <Loading />}
+			{!isLoading && (
+				<Table
+					data={data}
+					columns={schema}
+					onCreate={onCreate}
+					onUpdate={onUpdate}
+					onDelete={() => setShowModal(true)}
+				/>
+			)}
 			{showForm && (
 				<div className='side-form'>
 					<Form schema={schema} data={selectedRow} onSave={onSave} onCancel={onCancel} />

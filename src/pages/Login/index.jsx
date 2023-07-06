@@ -4,18 +4,22 @@ import './Login.scss';
 import { request } from '../../utils/fetch';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from '../../components/Snackbar/context';
+import Loading from '../../components/Loading';
 
 const Login = () => {
     const navigate = useNavigate();
     const [ user, setUser ] = useState({username: '', password: ''});
     const [showPassword, setshowPassword] = useState(false);
-	const [snackbar, setSnackbar] = useSnackbar();
+	const [, setSnackbar] = useSnackbar();
+	const [isLoading, setIsLoading] = useState(false);
 
     const login = () => {
+		setIsLoading(true);
         request(
 			'users/login',
 			{ method: 'POST', body: user },
 			({ token }) => {
+				setIsLoading(false);
 				window.localStorage.setItem('token', token);
                 navigate('/', { replace: true });
 				setSnackbar({
@@ -25,6 +29,7 @@ const Login = () => {
 				});
 			},
 			error => {
+				setIsLoading(false);
 				setSnackbar({
 					show: true,
 					message: 'Usuario o contraseña invalidos',
@@ -35,6 +40,7 @@ const Login = () => {
     }
 	return (
 		<div className='login-container'>
+			{isLoading && <Loading />}
 			<div className='login-form'>
 				<div className='form-icon'>
 					<img
