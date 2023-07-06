@@ -125,6 +125,8 @@ const DependentData = props => {
 		setShowForm(false);
 	};
 
+	console.log(dependencies)
+
 	return (
 		<>
 			{isLoading && <Loading />}

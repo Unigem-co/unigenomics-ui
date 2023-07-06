@@ -13,13 +13,12 @@ const Login = () => {
 	const [, setSnackbar] = useSnackbar();
 	const [isLoading, setIsLoading] = useState(false);
 
-    const login = () => {
+    const login = async () => {
 		setIsLoading(true);
-        request(
+        await request(
 			'users/login',
 			{ method: 'POST', body: user },
 			({ token }) => {
-				setIsLoading(false);
 				window.localStorage.setItem('token', token);
                 navigate('/', { replace: true });
 				setSnackbar({
@@ -29,14 +28,14 @@ const Login = () => {
 				});
 			},
 			error => {
-				setIsLoading(false);
 				setSnackbar({
 					show: true,
 					message: 'Usuario o contraseña invalidos',
 					className: 'error',
 				});
 			},
-		);        
+		);     
+		setIsLoading(false);   
     }
 	return (
 		<div className='login-container'>

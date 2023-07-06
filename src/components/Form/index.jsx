@@ -56,7 +56,7 @@ const Form = props => {
 						<Select
 							disabled={disabled}
 							options={
-								dependencies[col?.column_name].data.map(v => ({
+								dependencies[col?.column_name]?.data.map(v => ({
 									...v,
 									text: v[dependencies[col?.column_name].displayValue],
 								})) ?? []

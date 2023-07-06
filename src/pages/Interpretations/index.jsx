@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DependentData from '../../components/DependentData';
 import { request } from '../../utils/fetch';
+import Loading from '../../components/Loading';
 
 const deps = {
 	config: {
@@ -18,15 +19,23 @@ const Interpretations = () => {
   const [referenceSnp, setReferenceSnp] = useState([]);
   const [genotypeEffects, setGenotypeEffects] = useState([]);
   const [dependencies, setDependencies] = useState(deps);
+  const [isLoading, setIsLoading] = useState(false);
 
   const onError = error => {
 		console.log(error);
+		setIsLoading(false);
   };
 
   useEffect(() => {
-		request('genotype', { method: 'GET' }, d => setGenotypes(d), onError);
-		request('referenceSnp', { method: 'GET' }, d => setReferenceSnp(d), onError);
-		request('genotypeEffect', { method: 'GET' }, d => setGenotypeEffects(d), onError);
+		const getData = async () => {
+			setIsLoading(true);
+			await request('genotype', { method: 'GET' }, d => setGenotypes(d), onError);
+			await request('referenceSnp',{ method: 'GET' },d => setReferenceSnp(d),onError,);
+			await request('genotypeEffect',{ method: 'GET' },d => setGenotypeEffects(d),onError,
+			);
+			setIsLoading(false);
+		}
+		getData();
   }, []);
 
   useEffect(() => {
@@ -35,9 +44,14 @@ const Interpretations = () => {
 			reference_snp: { displayValue: 'rs_name', data: referenceSnp },
 			genotype_effect: { displayValue: 'name', data: genotypeEffects },
 		});
-  }, [genotypes, referenceSnp]);
+  }, [genotypes, referenceSnp, genotypeEffects]);
 
-  return <DependentData endpoint='interpretation' dependencies={dependencies} />;
+  return (
+		<>
+			{isLoading && <Loading />}
+			<DependentData endpoint='interpretation' dependencies={dependencies} />
+		</>
+  );
 }
 
 export default Interpretations
