@@ -166,7 +166,7 @@ const CreateReportDetail = props => {
 						<label>{r.rs_name}</label>
 						<div>
 							<Select
-								value={localData[r.id]?.result || null}
+								value={localData[r.id]?.genotype || null}
 								options={r.genotypes?.map(g => ({
 									id: g.genotype_id,
 									text: g.genotype_name,
