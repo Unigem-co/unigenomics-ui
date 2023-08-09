@@ -35,7 +35,6 @@ const CreateReportDetail = props => {
 				data => {
 					setReportDate(selectedReport.report_date);
 					setSamplingDate(selectedReport.sampling_date);
-					console.log(data);
 					const newLocalData = data.reduce(
 						(prev, curr) => ({
 							...prev,
@@ -53,6 +52,7 @@ const CreateReportDetail = props => {
 						}),
 						{},
 					);
+					console.log(newLocalData);
 					setInterpretations(interpretations);
 					setLocalData(newLocalData);
 				},
@@ -166,7 +166,7 @@ const CreateReportDetail = props => {
 						<label>{r.rs_name}</label>
 						<div>
 							<Select
-								value={localData[r.id].genotype || null}
+								value={localData[r.id]?.result || null}
 								options={r.genotypes?.map(g => ({
 									id: g.genotype_id,
 									text: g.genotype_name,
