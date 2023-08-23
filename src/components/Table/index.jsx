@@ -18,6 +18,7 @@ const Table = props => {
 		onDelete,
 		onUpdateText,
 		onUpdateTooltip,
+		extraOptions
 	} = props;
 
 	const [searchedValue, setSearchedValue] = useState('');
@@ -86,8 +87,11 @@ const Table = props => {
 											}}
 											title={onUpdateTooltip ? onUpdateTooltip : 'Editar'}
 										>
-											{onUpdateText ? onUpdateText : <i className='bi bi-pencil-square'></i>}
-											
+											{onUpdateText ? (
+												onUpdateText
+											) : (
+												<i className='bi bi-pencil-square'></i>
+											)}
 										</button>
 									)}
 									{onDelete && (
@@ -103,6 +107,20 @@ const Table = props => {
 											<i className='bi bi-trash'></i>
 										</button>
 									)}
+									{extraOptions &&
+										extraOptions.map(({ onClick, icon, title }) => (
+											<button
+												className='transparent'
+												onClick={event => {
+													event.stopPropagation();
+													event.preventDefault();
+													onClick(row);
+												}}
+												title={title}
+											>
+												<i className={icon}></i>
+											</button>
+										))}
 								</td>
 							</tr>
 						</>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { request } from '../../utils/fetch';
+import { fileRequest, request } from '../../utils/fetch';
 import Form from '../../components/Form';
 import Select from '../../components/Select';
 import CreateReportDetail from './CreateReportDetail';
@@ -8,6 +8,7 @@ import Table from '../../components/Table';
 import './CreateReport.scss';
 import { useSnackbar } from '../../components/Snackbar/context';
 import AcceptModal from '../../components/Modal/AcceptModal';
+import Loading from '../../components/Loading';
 
 const USERS = 'users/user';
 const REPORTS = 'report';
@@ -50,6 +51,9 @@ const Report = () => {
 	const [, setSnackbar] = useSnackbar();
 	const [deleteRow, setDeleteRow] = useState({});
 	const [showModal, setShowModal] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [reportGenerated, setReportGenerated] = useState(false);
+	const [fileUrl, setFileUrl] = useState();
 	const onError = error => console.log(error);
 
 	useEffect(() => {
@@ -71,7 +75,7 @@ const Report = () => {
 		request(
 			'report',
 			{ method: 'DELETE', body: deleteRow },
-			(id) => {
+			id => {
 				setSnackbar({
 					show: true,
 					message: 'Reporte eliminado',
@@ -86,11 +90,28 @@ const Report = () => {
 	const onReportCreated = () => {
 		requestReports(selectedUser, setReports, onError);
 		setShowCreateReportDetail(false);
-	}
+	};
+
+	const onGenerateReport = report => {
+		setLoading(true);
+		setShowCreateReportDetail(false);
+		fileRequest(
+			`generate-report/${report.id}`,
+			{ method: 'POST' },
+			data => {
+				const url = window.URL.createObjectURL(data);
+				setReportGenerated(true);
+				setFileUrl(url);
+				setLoading(false);
+			},
+			onError,
+		);
+	};
 
 	return (
 		<>
 			<div className='create-report'>
+				{loading && <Loading />}
 				<div>
 					<label>Selecciona el usuario que deseas reportar:</label>
 					<Select
@@ -117,11 +138,19 @@ const Report = () => {
 						onUpdate={value => {
 							setSelectedReport(value);
 							setShowCreateReportDetail(true);
+							setReportGenerated(false);
 						}}
 						onDelete={value => {
 							setShowModal(true);
 							setDeleteRow(value);
 						}}
+						extraOptions={[
+							{
+								title: 'Generar',
+								onClick: onGenerateReport,
+								icon: 'bi bi-eye',
+							},
+						]}
 					/>
 				)}
 				{showForm && (
@@ -138,6 +167,7 @@ const Report = () => {
 					</div>
 				)}
 			</div>
+
 			{showCreateReportDetail && (
 				<CreateReportDetail
 					user={selectedUser}
@@ -145,6 +175,12 @@ const Report = () => {
 					selectedReport={selectedReport}
 					onReportCreated={onReportCreated}
 				/>
+			)}
+
+			{reportGenerated && (
+				<div className='generated-report'>
+					<embed src={fileUrl} className='embedded-pdf' />
+				</div>
 			)}
 
 			{showModal && (

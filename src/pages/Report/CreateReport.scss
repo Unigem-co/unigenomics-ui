@@ -38,3 +38,19 @@
         width: 100%;
     }
 }
+
+.generated-report {
+    border-radius: 10px;
+    background-color: $black-background;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
+    .embedded-pdf {
+        width: 98%;
+        height: 98%;
+        border-radius: 10px;
+    }
+}
