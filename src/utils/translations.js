@@ -16,7 +16,8 @@ export const translate = (key) => ({
     password: 'Contraseña',
     report_date: 'Fecha de Reporte',
     sampling_date: 'Toma de Muestra',
-    genotype_effect: 'Efecto en Genotipo'
+    genotype_effect: 'Efecto en Genotipo',
+    prime_id: 'Id de Prime',
 }[key] || key);
 
 export const snackbar = {
