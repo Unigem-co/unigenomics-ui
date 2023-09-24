@@ -4,6 +4,8 @@ import Select from '../../components/Select';
 import './CreateReportDetail.scss';
 import { useSnackbar } from '../../components/Snackbar/context';
 import Input from '../../components/Input';
+import Loading from '../../components/Loading';
+import AcceptModal from '../../components/Modal/AcceptModal';
 
 const date = new Date();
 const year = date.getFullYear();
@@ -20,14 +22,17 @@ const createInitialLocalData = referencesWithGenotypes =>
 	);
 
 const CreateReportDetail = props => {
-	const { user, referencesWithGenotypes, selectedReport, onReportCreated } = props;
+	const { user, referencesWithGenotypes, selectedReport, onReportCreated, onCancel } = props;
 	const [localData, setLocalData] = useState(createInitialLocalData(referencesWithGenotypes));
 	const [, setSnackbar] = useSnackbar();
 	const [reportDate, setReportDate] = useState(`${year}-${month}-${day}`);
 	const [samplingDate, setSamplingDate] = useState(`${year}-${month}-${day}`);
 	const [interpretations, setInterpretations] = useState({});
+	const [isLoading, setIsLoading] = useState(false);
+	const [showModal, setShowModal] = useState(false);
 
 	useEffect(() => {
+		setIsLoading(true);
 		if (selectedReport?.id) {
 			request(
 				`report/detailed/${selectedReport?.id}`,
@@ -52,9 +57,9 @@ const CreateReportDetail = props => {
 						}),
 						{},
 					);
-					console.log(newLocalData);
 					setInterpretations(interpretations);
 					setLocalData(newLocalData);
+					setIsLoading(false);
 				},
 				onError,
 			);
@@ -62,6 +67,7 @@ const CreateReportDetail = props => {
 			setLocalData(createInitialLocalData(referencesWithGenotypes));
 			setSamplingDate(`${year}-${month}-${day}`);
 			setReportDate(`${year}-${month}-${day}`);
+			setIsLoading(false);
 		}
 	}, [selectedReport?.id]);
 
@@ -82,10 +88,14 @@ const CreateReportDetail = props => {
 	};
 
 	const onGenotypeSelected = (value, referenceSnp) => {
+		setIsLoading(true);
 		request(
 			`interpretation/findResultInterpretation/${referenceSnp.id}/${value}`,
 			{method: 'GET'},
-			data => setInterpretations({ ...interpretations, [referenceSnp.rs_name]: data.interpretation }),
+			data => {
+				setInterpretations({ ...interpretations, [referenceSnp.rs_name]: data.interpretation });
+				setIsLoading(false);
+			},
 			onError,
 		);
 		setLocalData({
@@ -95,6 +105,7 @@ const CreateReportDetail = props => {
 	};
 
 	const onSaveReport = () => {
+		setIsLoading(true);
 		const formFilled =
 			referencesWithGenotypes.filter(rd =>
 				localData[rd.id].genotype ? false : true,
@@ -112,6 +123,7 @@ const CreateReportDetail = props => {
 							className: 'success',
 						});
 						onReportCreated();
+						setIsLoading(false);
 					},
 					onError,
 				);
@@ -126,6 +138,7 @@ const CreateReportDetail = props => {
 							className: 'success',
 						});
 						onReportCreated();
+						setIsLoading(false);
 					},
 					onError,
 				);
@@ -140,54 +153,71 @@ const CreateReportDetail = props => {
 	};
 
 	return (
-		<div className='create-report-detail'>
-			<h2>{selectedReport?.id ? 'Editar Reporte' : 'Crear Reporte'}</h2>
-			<div className='report-dates'>
-				<div>
-					<label>Fecha de Reporte</label>
-					<Input
-						type='date'
-						value={reportDate}
-						onChange={event => setReportDate(event.target.value)}
-					/>
-				</div>
-				<div>
-					<label>Toma de muestra</label>
-					<Input
-						type='date'
-						value={samplingDate}
-						onChange={event => setSamplingDate(event.target.value)}
-					/>
-				</div>
-			</div>
-			<div className='report-detail-form'>
-				{referencesWithGenotypes.map(r => (
-					<div className='reference-snp'>
-						<label>{r.rs_name}</label>
-						<div>
-							<Select
-								value={localData[r.id]?.genotype || null}
-								options={r.genotypes?.map(g => ({
-									id: g.genotype_id,
-									text: g.genotype_name,
-								}))}
-								onSelect={value => onGenotypeSelected(value, r)}
-							/>
-						</div>
-						{interpretations[r.rs_name] ? (
-							<div className='genotypes' key={`${r.rs_name}-interpretation`}>
-								<p>{interpretations[r.rs_name]}</p>
-							</div>
-						) : null}
+		<>
+			{isLoading && <Loading />}
+			<div className='create-report-detail'>
+				<h2>{selectedReport?.id ? 'Editar Reporte' : 'Crear Reporte'}</h2>
+				<div className='report-dates'>
+					<div>
+						<label>Fecha de Reporte</label>
+						<Input
+							type='date'
+							value={reportDate}
+							onChange={event => setReportDate(event.target.value)}
+						/>
 					</div>
-				))}
+					<div>
+						<label>Toma de muestra</label>
+						<Input
+							type='date'
+							value={samplingDate}
+							onChange={event => setSamplingDate(event.target.value)}
+						/>
+					</div>
+				</div>
+				<div className='report-detail-form'>
+					{referencesWithGenotypes.map(r => (
+						<div className='reference-snp'>
+							<label>{r.rs_name}</label>
+							<div>
+								<Select
+									value={localData[r.id]?.genotype || null}
+									options={r.genotypes?.map(g => ({
+										id: g.genotype_id,
+										text: g.genotype_name,
+									}))}
+									onSelect={value => onGenotypeSelected(value, r)}
+								/>
+							</div>
+							{interpretations[r.rs_name] ? (
+								<div className='genotypes' key={`${r.rs_name}-interpretation`}>
+									<p>{interpretations[r.rs_name]}</p>
+								</div>
+							) : null}
+						</div>
+					))}
+				</div>
+				<div className='report-detail-actions'>
+					<button className='delete' onClick={() => setShowModal(true)}>
+						Cancelar
+					</button>
+					<button className='primary' onClick={onSaveReport}>
+						Guardar
+					</button>
+				</div>
+
+				{showModal && (
+					<AcceptModal
+						title='Cancelar cambios'
+						message='Deseas salir sin guardar los cambios?'
+						onAccept={onCancel}
+						onReject={() => {
+							setShowModal(false);
+						}}
+					/>
+				)}
 			</div>
-			<div className='report-detail-actions'>
-				<button className='primary' onClick={onSaveReport}>
-					Guardar
-				</button>
-			</div>
-		</div>
+		</>
 	);
 };
 

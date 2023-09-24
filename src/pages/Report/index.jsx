@@ -174,6 +174,7 @@ const Report = () => {
 					referencesWithGenotypes={referencesWithGenotypes}
 					selectedReport={selectedReport}
 					onReportCreated={onReportCreated}
+					onCancel={() => setShowCreateReportDetail(false)}
 				/>
 			)}
 
