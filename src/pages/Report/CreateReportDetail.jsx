@@ -6,6 +6,7 @@ import { useSnackbar } from '../../components/Snackbar/context';
 import Input from '../../components/Input';
 import Loading from '../../components/Loading';
 import AcceptModal from '../../components/Modal/AcceptModal';
+import Search from '../../components/Search';
 
 const date = new Date();
 const year = date.getFullYear();
@@ -24,6 +25,7 @@ const createInitialLocalData = referencesWithGenotypes =>
 const CreateReportDetail = props => {
 	const { user, referencesWithGenotypes, selectedReport, onReportCreated, onCancel } = props;
 	const [localData, setLocalData] = useState(createInitialLocalData(referencesWithGenotypes));
+	const [searchValue, setSearchValue] = useState('');
 	const [, setSnackbar] = useSnackbar();
 	const [reportDate, setReportDate] = useState(`${year}-${month}-${day}`);
 	const [samplingDate, setSamplingDate] = useState(`${year}-${month}-${day}`);
@@ -91,9 +93,12 @@ const CreateReportDetail = props => {
 		setIsLoading(true);
 		request(
 			`interpretation/findResultInterpretation/${referenceSnp.id}/${value}`,
-			{method: 'GET'},
+			{ method: 'GET' },
 			data => {
-				setInterpretations({ ...interpretations, [referenceSnp.rs_name]: data.interpretation });
+				setInterpretations({
+					...interpretations,
+					[referenceSnp.rs_name]: data.interpretation,
+				});
 				setIsLoading(false);
 			},
 			onError,
@@ -107,9 +112,8 @@ const CreateReportDetail = props => {
 	const onSaveReport = () => {
 		setIsLoading(true);
 		const formFilled =
-			referencesWithGenotypes.filter(rd =>
-				localData[rd.id].genotype ? false : true,
-			).length === 0;
+			referencesWithGenotypes.filter(rd => (localData[rd.id].genotype ? false : true))
+				.length === 0;
 
 		if (formFilled) {
 			if (selectedReport?.id) {
@@ -152,11 +156,18 @@ const CreateReportDetail = props => {
 		}
 	};
 
+	const filteredReferences = searchValue
+		? referencesWithGenotypes.filter(referenceWithGenotype =>
+				referenceWithGenotype.rs_name.includes(searchValue)
+		  )
+		: referencesWithGenotypes;
+
 	return (
 		<>
 			{isLoading && <Loading />}
 			<div className='create-report-detail'>
 				<h2>{selectedReport?.id ? 'Editar Reporte' : 'Crear Reporte'}</h2>
+				<Search placeholder='Buscar RS' onChange={e => setSearchValue(e.target.value)} />
 				<div className='report-dates'>
 					<div>
 						<label>Fecha de Reporte</label>
@@ -176,7 +187,7 @@ const CreateReportDetail = props => {
 					</div>
 				</div>
 				<div className='report-detail-form'>
-					{referencesWithGenotypes.map(r => (
+					{filteredReferences.map(r => (
 						<div className='reference-snp'>
 							<label>{r.rs_name}</label>
 							<div>

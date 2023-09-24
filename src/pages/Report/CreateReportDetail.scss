@@ -9,6 +9,11 @@
     border-radius: 10px;
     color: white;
 
+    .search-input {
+        height: 50px;
+        width: 44.5%;
+    }
+
     .report-dates {
         display: flex;
         column-gap: 50px;
