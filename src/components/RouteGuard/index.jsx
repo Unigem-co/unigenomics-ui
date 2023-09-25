@@ -4,6 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const RouteGuard = ({outlet}) => {
     const token = window.localStorage.getItem('token') || '';
+    console.log(token);
     const isValidJwt = !isJwtExpired(token); 
     const user = parseJwt(token);
     if (!isValidJwt) {
@@ -11,7 +12,7 @@ const RouteGuard = ({outlet}) => {
         return <Navigate to='/login' replace />;
 	}
 
-    const isAdmin = user.role === 'admin';
+    const isAdmin = user?.role === 'admin';
 
     if (!isAdmin) {
 		return <Navigate to='/user-report' replace />;

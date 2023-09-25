@@ -14,9 +14,12 @@ export function parseJwt(token) {
 export function isJwtExpired(token) {
     const parsedJwt = parseJwt(token);
 
-    if(!parsedJwt?.exp) {
-        return false;
+    if(parsedJwt) {
+        if (parsedJwt.role === 'admin') {
+            return false;
+        } else if (!parsedJwt.exp){
+            return true;
+        }
     }
-
     return parsedJwt.exp * 1000 < Date.now();
 };
