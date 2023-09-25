@@ -15,7 +15,7 @@ export function isJwtExpired(token) {
     const parsedJwt = parseJwt(token);
 
     if(!parsedJwt?.exp) {
-        return true;
+        return false;
     }
 
     return parsedJwt.exp * 1000 < Date.now();
