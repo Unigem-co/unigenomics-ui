@@ -72,6 +72,7 @@ const FlatData = props => {
 
 	const onDelete = async value => {
 		setisLoading(true);
+		console.log(value);
 		await request(
 			endpoint,
 			{ method: 'DELETE', body: value },
@@ -138,7 +139,10 @@ const FlatData = props => {
 					columns={schema}
 					onCreate={onCreate}
 					onUpdate={onUpdate}
-					onDelete={() => setShowModal(true)}
+					onDelete={(value) => {
+						setSelectedRow(value);
+						setShowModal(true);
+					}}
 				/>
 			)}
 			{showForm && (
