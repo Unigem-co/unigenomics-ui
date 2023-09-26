@@ -17,9 +17,11 @@ export function isJwtExpired(token) {
     if(parsedJwt) {
         if (parsedJwt.role === 'admin') {
             return false;
-        } else if (!parsedJwt.exp){
+        } else if (!parsedJwt?.exp){
             return true;
         }
+        return parsedJwt.exp * 1000 < Date.now();
     }
-    return parsedJwt.exp * 1000 < Date.now();
+
+    return true;
 };
