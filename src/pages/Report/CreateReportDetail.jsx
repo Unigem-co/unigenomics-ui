@@ -109,45 +109,59 @@ const CreateReportDetail = props => {
 		});
 	};
 
+	const saveChanges = () => {
+		console.log(localData);
+		if (selectedReport?.id) {
+			request(
+				'report',
+				{
+					method: 'PUT',
+					body: {
+						reportId: selectedReport.id,
+						reportDate,
+						samplingDate,
+						detail: localData,
+					},
+				},
+				() => {
+					setSnackbar({
+						show: true,
+						message: 'Reporte creado',
+						className: 'success',
+					});
+					onReportCreated();
+					setIsLoading(false);
+				},
+				onError,
+			);
+		} else {
+			request(
+				'report',
+				{ method: 'POST', body: { user, reportDate, samplingDate, detail: localData } },
+				() => {
+					setSnackbar({
+						show: true,
+						message: 'Reporte creado',
+						className: 'success',
+					});
+					onReportCreated();
+					setIsLoading(false);
+				},
+				onError,
+			);
+		}
+	};
 	const onSaveReport = () => {
 		setIsLoading(true);
+		console.log(referencesWithGenotypes, localData);
 		const formFilled =
-			referencesWithGenotypes.filter(rd => (localData[rd.id].genotype ? false : true))
+			referencesWithGenotypes.filter(rd => (localData[rd.id]?.genotype ? false : true))
 				.length === 0;
 
 		if (formFilled) {
-			if (selectedReport?.id) {
-				request(
-					'report',
-					{ method: 'PUT', body: { user, reportDate, samplingDate, detail: localData } },
-					() => {
-						setSnackbar({
-							show: true,
-							message: 'Reporte creado',
-							className: 'success',
-						});
-						onReportCreated();
-						setIsLoading(false);
-					},
-					onError,
-				);
-			} else {
-				request(
-					'report',
-					{ method: 'POST', body: { user, reportDate, samplingDate, detail: localData } },
-					() => {
-						setSnackbar({
-							show: true,
-							message: 'Reporte creado',
-							className: 'success',
-						});
-						onReportCreated();
-						setIsLoading(false);
-					},
-					onError,
-				);
-			}
+			saveChanges();
 		} else {
+			saveChanges();
 			setSnackbar({
 				show: true,
 				message: 'Faltan campos por llenar',
