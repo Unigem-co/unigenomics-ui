@@ -5,7 +5,7 @@ import Search from '../Search';
 
 const search = (data, searchedValue) => {
 	return searchedValue
-		? data.filter(d => Object.keys(d).find(k => d[k].toString().includes(searchedValue)))
+		? data?.filter(d => Object.keys(d).find(k => d[k]?.toString().includes(searchedValue))) || []
 		: data;
 };
 
