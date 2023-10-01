@@ -9,7 +9,8 @@ import AcceptModal from '../Modal/AcceptModal';
 function SideMenu() {
 	const navigate = useNavigate();
 	const [showModal, setShowModal] = useState(false);
-	const [, setSnackbar ] = useSnackbar();
+	const [hideMenu, setHideMenu] = useState(false);
+	const [, setSnackbar] = useSnackbar();
 	const actions = [
 		{
 			name: 'Crear Reporte',
@@ -61,45 +62,59 @@ function SideMenu() {
 			className: 'success',
 		});
 		setShowModal(false);
-	}
+	};
 	return (
 		<>
 			<div className='side-menu'>
 				<div className='side-menu-icon'>
-					<img
-						src='https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png'
-						alt='unigem-logo'
-					/>
-				</div>
-				<Spacer text='Acciones'>
-					{actions.map(option => (
-						<SideMenuOption
-							key={option.link}
-							name={option.name}
-							link={option.link}
-							icon={option.icon}
-						/>
-					))}
-				</Spacer>
-				<Spacer text='Configuraciones'>
-					{configurations.map(option => (
-						<SideMenuOption
-							key={option.link}
-							name={option.name}
-							link={option.link}
-							icon={option.icon}
-						/>
-					))}
-				</Spacer>
-				<div className='sign-out'>
-					<button
-						onClick={() => setShowModal(true)}
-						className='delete'
-						title='Cerrar sesión'
-					>
-						<i className='bi bi-box-arrow-left'></i>
+					<button className='primary' title={hideMenu ? 'Ocultar' : 'Expandir'} onClick={() => setHideMenu(!hideMenu)}>
+						{hideMenu ? (
+							<i className='bi bi-three-dots-vertical' />
+						) : (
+							<i className='bi bi-three-dots-vertical' />
+						)}
 					</button>
+					{!hideMenu && (
+						<img
+							src='https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png'
+							alt='unigem-logo'
+						/>
+					)}
 				</div>
+
+				{!hideMenu && (
+					<>
+						<Spacer text='Acciones'>
+							{actions.map(option => (
+								<SideMenuOption
+									key={option.link}
+									name={option.name}
+									link={option.link}
+									icon={option.icon}
+								/>
+							))}
+						</Spacer>
+						<Spacer text='Configuraciones'>
+							{configurations.map(option => (
+								<SideMenuOption
+									key={option.link}
+									name={option.name}
+									link={option.link}
+									icon={option.icon}
+								/>
+							))}
+						</Spacer>
+						<div className='sign-out'>
+							<button
+								onClick={() => setShowModal(true)}
+								className='delete'
+								title='Cerrar sesión'
+							>
+								<i className='bi bi-box-arrow-left'></i>
+							</button>
+						</div>
+					</>
+				)}
 			</div>
 			{showModal && (
 				<AcceptModal

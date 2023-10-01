@@ -13,7 +13,7 @@ const DependentData = props => {
 	const [selectedValue, setSelectedValue] = useState({});
 	const [showForm, setShowForm] = useState(false);
 	const [showModal, setShowModal] = useState(false);
-	const [isLoading, setIsLoading] = useState(false)
+	const [isLoading, setIsLoading] = useState(false);
 
 	const [, setSnackbar] = useSnackbar();
 
@@ -36,10 +36,15 @@ const DependentData = props => {
 
 	useEffect(() => {
 		setIsLoading(true);
-		request(endpoint, { method: 'GET' }, d => {
-			setData(d);
-			setIsLoading(false);
-		}, onError);
+		request(
+			endpoint,
+			{ method: 'GET' },
+			d => {
+				setData(d);
+				setIsLoading(false);
+			},
+			onError,
+		);
 		request(`${endpoint}/schema`, { method: 'GET' }, d => setSchema(d), onError);
 	}, [endpoint]);
 
@@ -125,18 +130,23 @@ const DependentData = props => {
 		setShowForm(false);
 	};
 
-	console.log(dependencies)
+	console.log(dependencies);
 
 	return (
 		<>
 			{isLoading && <Loading />}
-			{!isLoading && <Table
-				data={data}
-				columns={schema}
-				onCreate={onCreate}
-				onUpdate={onUpdate}
-				onDelete={() => setShowModal(true)}
-			/>}
+			{!isLoading && (
+				<Table
+					data={data}
+					columns={schema}
+					onCreate={onCreate}
+					onUpdate={onUpdate}
+					onDelete={value => {
+						setShowModal(true);
+						setSelectedValue(value);
+					}}
+				/>
+			)}
 			{showForm && (
 				<Form
 					data={selectedValue}
