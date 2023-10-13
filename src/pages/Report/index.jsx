@@ -134,7 +134,7 @@ const Report = () => {
 				{!!reports?.length && (
 					<Table
 						data={reports}
-						columns={Object.keys(reports[0]).map(key => ({ column_name: key }))}
+						columns={Object.keys(reports[0]).map(key => key === 'observations' ? ({}) : ({ column_name: key }))}
 						onUpdate={value => {
 							setSelectedReport(value);
 							setShowCreateReportDetail(true);

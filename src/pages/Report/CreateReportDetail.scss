@@ -3,6 +3,7 @@
 .create-report-detail {
     display: flex;
     flex-direction: column;
+    gap: 20px;
     background-color: $black-background;
     width: 100%;
     padding: 10px;
@@ -10,22 +11,29 @@
     color: white;
 
     .search-input {
-        height: 50px;
         width: 44.5%;
+        height: fit-content;
+        padding: 10px;
     }
 
     .report-dates {
         display: flex;
-        column-gap: 50px;
+        flex-wrap: wrap;
+        gap: 15px 50px;
         width: 100%;
-        margin: 20px 0;
         div {
             width: 20%;
             #input {
                 width: 100%;
             }
         }
-        
+        .report-observations {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 98%;
+            height: 150px;
+        }
     }
 
     .report-detail-form {

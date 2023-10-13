@@ -7,6 +7,7 @@ import Input from '../../components/Input';
 import Loading from '../../components/Loading';
 import AcceptModal from '../../components/Modal/AcceptModal';
 import Search from '../../components/Search';
+import TextArea from '../../components/TextArea';
 
 const date = new Date();
 const year = date.getFullYear();
@@ -29,6 +30,7 @@ const CreateReportDetail = props => {
 	const [, setSnackbar] = useSnackbar();
 	const [reportDate, setReportDate] = useState(`${year}-${month}-${day}`);
 	const [samplingDate, setSamplingDate] = useState(`${year}-${month}-${day}`);
+	const [observations, setObservations] = useState('');
 	const [interpretations, setInterpretations] = useState({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [showModal, setShowModal] = useState(false);
@@ -40,8 +42,6 @@ const CreateReportDetail = props => {
 				`report/detailed/${selectedReport?.id}`,
 				{ method: 'GET' },
 				data => {
-					setReportDate(selectedReport.report_date);
-					setSamplingDate(selectedReport.sampling_date);
 					const newLocalData = data.reduce(
 						(prev, curr) => ({
 							...prev,
@@ -59,6 +59,9 @@ const CreateReportDetail = props => {
 						}),
 						{},
 					);
+					setReportDate(selectedReport.report_date);
+					setSamplingDate(selectedReport.sampling_date);
+					setObservations(selectedReport.observations ?? '');
 					setInterpretations(interpretations);
 					setLocalData(newLocalData);
 					setIsLoading(false);
@@ -69,6 +72,7 @@ const CreateReportDetail = props => {
 			setLocalData(createInitialLocalData(referencesWithGenotypes));
 			setSamplingDate(`${year}-${month}-${day}`);
 			setReportDate(`${year}-${month}-${day}`);
+			setObservations('');
 			setIsLoading(false);
 		}
 	}, [selectedReport?.id]);
@@ -110,7 +114,6 @@ const CreateReportDetail = props => {
 	};
 
 	const saveChanges = () => {
-		console.log(localData);
 		if (selectedReport?.id) {
 			request(
 				'report',
@@ -120,6 +123,7 @@ const CreateReportDetail = props => {
 						reportId: selectedReport.id,
 						reportDate,
 						samplingDate,
+						observations,
 						detail: localData,
 					},
 				},
@@ -137,7 +141,7 @@ const CreateReportDetail = props => {
 		} else {
 			request(
 				'report',
-				{ method: 'POST', body: { user, reportDate, samplingDate, detail: localData } },
+				{ method: 'POST', body: { user, reportDate, samplingDate, observations, detail: localData } },
 				() => {
 					setSnackbar({
 						show: true,
@@ -153,7 +157,6 @@ const CreateReportDetail = props => {
 	};
 	const onSaveReport = () => {
 		setIsLoading(true);
-		console.log(referencesWithGenotypes, localData);
 		const formFilled =
 			referencesWithGenotypes.filter(rd => (localData[rd.id]?.genotype ? false : true))
 				.length === 0;
@@ -181,7 +184,6 @@ const CreateReportDetail = props => {
 			{isLoading && <Loading />}
 			<div className='create-report-detail'>
 				<h2>{selectedReport?.id ? 'Editar Reporte' : 'Crear Reporte'}</h2>
-				<Search placeholder='Buscar RS' onChange={e => setSearchValue(e.target.value)} />
 				<div className='report-dates'>
 					<div>
 						<label>Fecha de Reporte</label>
@@ -199,7 +201,16 @@ const CreateReportDetail = props => {
 							onChange={event => setSamplingDate(event.target.value)}
 						/>
 					</div>
+					<div className='report-observations'>
+						<label>Observaciones</label>
+						<TextArea
+							type='text'
+							value={observations}
+							onChange={event => setObservations(event.target.value)}
+						/>
+					</div>
 				</div>
+				<Search placeholder='Buscar RS' onChange={e => setSearchValue(e.target.value)} />
 				<div className='report-detail-form'>
 					{filteredReferences.map(r => (
 						<div className='reference-snp'>

@@ -4,7 +4,6 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const RouteGuard = ({outlet}) => {
     const token = window.localStorage.getItem('token') || '';
-    console.log(token);
     const isValidJwt = !isJwtExpired(token); 
     const user = parseJwt(token);
     if (!isValidJwt) {
