@@ -18,7 +18,7 @@ const createInitialLocalData = referencesWithGenotypes =>
 	referencesWithGenotypes?.reduce(
 		(prev, curr) => ({
 			...prev,
-			[curr.id]: { genotype: null, genotypeEffect: null },
+			[curr.id]: { genotype: null },
 		}),
 		{},
 	);
@@ -114,6 +114,7 @@ const CreateReportDetail = props => {
 	};
 
 	const saveChanges = () => {
+		setIsLoading(true);
 		if (selectedReport?.id) {
 			request(
 				'report',
@@ -139,9 +140,19 @@ const CreateReportDetail = props => {
 				onError,
 			);
 		} else {
+			console.log(localData);
+			const detail = Object.keys(localData).reduce(
+				(prev, key) => ({
+					...prev,
+					...(localData[key].genotype
+						? { [key]: { genotype: localData[key].genotype } }
+						: {}),
+				}),
+				{},
+			);
 			request(
 				'report',
-				{ method: 'POST', body: { user, reportDate, samplingDate, observations, detail: localData } },
+				{ method: 'POST', body: { user, reportDate, samplingDate, observations, detail } },
 				() => {
 					setSnackbar({
 						show: true,
@@ -156,26 +167,23 @@ const CreateReportDetail = props => {
 		}
 	};
 	const onSaveReport = () => {
-		setIsLoading(true);
 		const formFilled =
 			referencesWithGenotypes.filter(rd => (localData[rd.id]?.genotype ? false : true))
 				.length === 0;
 
-		if (formFilled) {
-			saveChanges();
-		} else {
-			saveChanges();
+		if (!formFilled) {
 			setSnackbar({
 				show: true,
 				message: 'Faltan campos por llenar',
 				className: 'error',
 			});
 		}
+		saveChanges();
 	};
 
 	const filteredReferences = searchValue
 		? referencesWithGenotypes.filter(referenceWithGenotype =>
-				referenceWithGenotype.rs_name.includes(searchValue)
+				referenceWithGenotype.rs_name.includes(searchValue),
 		  )
 		: referencesWithGenotypes;
 
