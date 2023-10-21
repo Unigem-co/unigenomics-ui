@@ -140,7 +140,6 @@ const CreateReportDetail = props => {
 				onError,
 			);
 		} else {
-			console.log(localData);
 			const detail = Object.keys(localData).reduce(
 				(prev, key) => ({
 					...prev,
