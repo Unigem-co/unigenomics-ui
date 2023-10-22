@@ -66,4 +66,13 @@
         width: 100%;
         margin-top: 50px;
     }
+
+    .unfinished-work-modal {
+        button.delete {
+            background-color: $unigem-blue;
+        }
+        button.primary {
+            background-color: $red;
+        }
+    }
 }

@@ -33,14 +33,9 @@ const Table = props => {
 	};
 	return (
 		<div className='table-scroll'>
-			<table id='table' cellspacing='0'>
+			<table id='table' cellSpacing='0'>
 				<thead>
 					<tr className='table-row-header'>
-						{columns.map(column => (
-							<th key={column.column_name} colSpan={1}>
-								{translate(column.column_name)}
-							</th>
-						))}
 						<th>
 							<span>Acciones</span>
 							{onCreate ? (
@@ -49,6 +44,11 @@ const Table = props => {
 								</button>
 							) : null}
 						</th>
+						{columns.map(column => (
+							<th key={column.column_name} colSpan={1}>
+								{translate(column.column_name)}
+							</th>
+						))}
 					</tr>
 					<tr className='search-header'>
 						<th colSpan={100}>
@@ -60,22 +60,10 @@ const Table = props => {
 					{tableData?.map((row, index) => (
 						<>
 							<tr
-								key={`row-${index}`}
+								key={`row-${row[0]}-${index}`}
 								className='table-row-data'
 								onClick={() => onUpdate(row)}
 							>
-								{columns.map(column => (
-									<td
-										style={{
-											textAlign:
-												row[column.column_name]?.toString().length > 20
-													? 'left'
-													: 'center',
-										}}
-									>
-										{row[column.column_name]}
-									</td>
-								))}
 								<td>
 									{onUpdate && (
 										<button
@@ -117,11 +105,25 @@ const Table = props => {
 													onClick(row);
 												}}
 												title={title}
+												key={`extra-option-${title}`}
 											>
 												<i className={icon}></i>
 											</button>
 										))}
 								</td>
+								{columns.map(column => (
+									<td
+										key={`${row[0]}-${column.column_name}-index`}
+										style={{
+											textAlign:
+												row[column.column_name]?.toString().length > 20
+													? 'left'
+													: 'center',
+										}}
+									>
+										{row[column.column_name]}
+									</td>
+								))}
 							</tr>
 						</>
 					))}

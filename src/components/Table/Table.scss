@@ -4,39 +4,52 @@
     background-color: $black-background;
     border-radius: 10px;
     overflow: auto;
+    min-height: 350px;
     height: 100%;
-    width: 50%;
-    min-height: 200px;
+    width: 100%;
 
     #table {
-        position: relative;
         color: white;
         min-width: 100%;
-        padding: 10px;
         max-height: 100%;
-        
+        padding: 10px;
+
         thead {
             border-radius: 10px;
             color: white;
+            position: sticky;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            border-radius: 10px 10px 0 0;
+
             .table-row-header {
-                th {
-                    background-color: $unigem-green;
-                    z-index: 1;
-                }
+
+                background-color: $unigem-green;
+
                 th:first-child {
-                    border-radius: 10px 0 0px 10px;
+                    border-radius: 10px 0 0 0;
+                    border: solid 2px $unigem-blue;
+                    position: sticky;
+                    left: 0;
+                    top: 0;
+                    background-color: $unigem-green;
                 }
+
                 th:last-child {
-                    border-radius: 0 10px 10px 0;
+                    border-radius: 0 10px 0px 0;
                 }
             }
+
             .search-header {
-                th { 
-                    text-align: start;
-                    top: 0px;
-                    left: 0px;
-                    position: sticky;
+                background-color: $unigem-green;
+
+                th {
                     .search-input {
+                        text-align: start;
+                        top: 0;
+                        left: 10px;
+                        position: sticky;
                         max-width: 300px;
                     }
                 }
@@ -53,20 +66,33 @@
             text-align: center;
         }
 
+        tbody::before {
+            content: ".";
+            line-height: 15px;
+            color: black;
+        }
+
         .table-row-data {
+            align-items: center;
+
             &:hover {
                 background-color: $unigem-green;
                 cursor: pointer;
-                
+
             }
+
             td:first-child {
                 border-top-left-radius: 5px;
                 border-bottom-left-radius: 5px;
+                height: 100%;
+                position: sticky;
+                left: 0;
+                top: 0;
+                border: solid 2px $unigem-blue;
+                background-color: $black-background;
             }
+
             td:last-child {
-                display: flex;
-                justify-content: center;
-                align-items: center;
                 border-top-right-radius: 5px;
                 border-bottom-right-radius: 5px;
             }

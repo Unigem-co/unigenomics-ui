@@ -19,6 +19,7 @@ const ReportGenerator = () => {
 	const [loading, setLoading] = useState(false);
 
 	const onError = e => {
+		setLoading(false);
 		if (e.status === 403) {
 			setSnackbar({
 				show: true,
