@@ -29,8 +29,8 @@ const dependencies = {
 	},
 };
 
-const requestReports = (selectedUser, setReports, onError) => {
-	request(
+const requestReports = async (selectedUser, setReports, onError) => {
+	await request(
 		`${REPORTS}/userReports/${selectedUser}`,
 		{ method: 'GET' },
 		d => {
@@ -39,6 +39,7 @@ const requestReports = (selectedUser, setReports, onError) => {
 		onError,
 	);
 };
+
 const Report = () => {
 	const [schema, setSchema] = useState({});
 	const [users, setUsers] = useState([]);
@@ -57,13 +58,25 @@ const Report = () => {
 	const onError = error => console.log(error);
 
 	useEffect(() => {
-		request(USERS, { method: 'GET' }, d => setUsers(d), onError);
-		request(`${USERS}/schema`, { method: 'GET' }, d => setSchema(d), onError);
-		request(REPORTS, { method: 'GET' }, d => setReferencesWithGenotypes(d), onError);
+		const getData = async () => {
+			setLoading(true);
+			await request(USERS, { method: 'GET' }, d => setUsers(d), onError);
+			await request(`${USERS}/schema`, { method: 'GET' }, d => setSchema(d), onError);
+			await request(REPORTS, { method: 'GET' }, d => setReferencesWithGenotypes(d), onError);
+			setLoading(false);
+		}
+
+		getData();
 	}, []);
 
 	useEffect(() => {
-		requestReports(selectedUser, setReports, onError);
+		const getUserData = async () => {
+			setLoading(true);
+			await requestReports(selectedUser, setReports, onError);
+			setLoading(false);
+		}
+		setShowCreateReportDetail(false);
+		getUserData();
 	}, [selectedUser]);
 
 	const onUserSelected = value => {
@@ -71,8 +84,9 @@ const Report = () => {
 		setSelectedUser(value);
 	};
 
-	const onDelete = () => {
-		request(
+	const onDelete = async () => {
+		setLoading(true);
+		await request(
 			'report',
 			{ method: 'DELETE', body: deleteRow },
 			id => {
@@ -85,10 +99,14 @@ const Report = () => {
 			},
 			onError,
 		);
+		setLoading(false);
+		setShowCreateReportDetail(false);
 	};
 
-	const onReportCreated = () => {
-		requestReports(selectedUser, setReports, onError);
+	const onReportCreated = async () => {
+		setLoading(true);
+		await requestReports(selectedUser, setReports, onError);
+		setLoading(false);
 		setShowCreateReportDetail(false);
 	};
 
@@ -134,7 +152,9 @@ const Report = () => {
 				{!!reports?.length && (
 					<Table
 						data={reports}
-						columns={Object.keys(reports[0]).map(key => key === 'observations' ? ({}) : ({ column_name: key }))}
+						columns={Object.keys(reports[0]).map(key =>
+							key === 'observations' ? {} : { column_name: key },
+						)}
 						onUpdate={value => {
 							setSelectedReport(value);
 							setShowCreateReportDetail(true);
@@ -180,6 +200,9 @@ const Report = () => {
 
 			{reportGenerated && (
 				<div className='generated-report'>
+					<button className='delete'>
+						<i className='bi bi-x-circle' />
+					</button>
 					<embed src={fileUrl} className='embedded-pdf' />
 				</div>
 			)}

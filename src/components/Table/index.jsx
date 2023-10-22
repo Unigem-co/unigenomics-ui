@@ -36,11 +36,6 @@ const Table = props => {
 			<table id='table' cellspacing='0'>
 				<thead>
 					<tr className='table-row-header'>
-						{columns.map(column => (
-							<th key={column.column_name} colSpan={1}>
-								{translate(column.column_name)}
-							</th>
-						))}
 						<th>
 							<span>Acciones</span>
 							{onCreate ? (
@@ -49,6 +44,11 @@ const Table = props => {
 								</button>
 							) : null}
 						</th>
+						{columns.map(column => (
+							<th key={column.column_name} colSpan={1}>
+								{translate(column.column_name)}
+							</th>
+						))}
 					</tr>
 					<tr className='search-header'>
 						<th colSpan={100}>
@@ -64,18 +64,6 @@ const Table = props => {
 								className='table-row-data'
 								onClick={() => onUpdate(row)}
 							>
-								{columns.map(column => (
-									<td
-										style={{
-											textAlign:
-												row[column.column_name]?.toString().length > 20
-													? 'left'
-													: 'center',
-										}}
-									>
-										{row[column.column_name]}
-									</td>
-								))}
 								<td>
 									{onUpdate && (
 										<button
@@ -122,6 +110,18 @@ const Table = props => {
 											</button>
 										))}
 								</td>
+								{columns.map(column => (
+									<td
+										style={{
+											textAlign:
+												row[column.column_name]?.toString().length > 20
+													? 'left'
+													: 'center',
+										}}
+									>
+										{row[column.column_name]}
+									</td>
+								))}
 							</tr>
 						</>
 					))}
