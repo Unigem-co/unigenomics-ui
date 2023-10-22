@@ -200,7 +200,7 @@ const Report = () => {
 
 			{reportGenerated && (
 				<div className='generated-report'>
-					<button className='delete'>
+					<button className='delete' onClick={() => setReportGenerated(false)} label="Cerrar">
 						<i className='bi bi-x-circle' />
 					</button>
 					<embed src={fileUrl} className='embedded-pdf' />
