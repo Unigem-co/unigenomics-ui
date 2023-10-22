@@ -48,6 +48,7 @@ const Select = props => {
 						<span
 							className={`select-option ${o?.id === value ? 'selected' : ''}`}
 							onClick={() => selectItem(o)}
+							key={o.text}
 						>
 							{o?.text}
 						</span>

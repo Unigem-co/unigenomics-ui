@@ -33,7 +33,7 @@ const Table = props => {
 	};
 	return (
 		<div className='table-scroll'>
-			<table id='table' cellspacing='0'>
+			<table id='table' cellSpacing='0'>
 				<thead>
 					<tr className='table-row-header'>
 						<th>
@@ -60,7 +60,7 @@ const Table = props => {
 					{tableData?.map((row, index) => (
 						<>
 							<tr
-								key={`row-${index}`}
+								key={`row-${row[0]}-${index}`}
 								className='table-row-data'
 								onClick={() => onUpdate(row)}
 							>
@@ -105,6 +105,7 @@ const Table = props => {
 													onClick(row);
 												}}
 												title={title}
+												key={`extra-option-${title}`}
 											>
 												<i className={icon}></i>
 											</button>
@@ -112,6 +113,7 @@ const Table = props => {
 								</td>
 								{columns.map(column => (
 									<td
+										key={`${row[0]}-${column.column_name}-index`}
 										style={{
 											textAlign:
 												row[column.column_name]?.toString().length > 20

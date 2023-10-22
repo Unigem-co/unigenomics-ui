@@ -55,7 +55,10 @@ const Report = () => {
 	const [loading, setLoading] = useState(false);
 	const [reportGenerated, setReportGenerated] = useState(false);
 	const [fileUrl, setFileUrl] = useState();
-	const onError = error => console.log(error);
+	const onError = error => {
+		console.log(error);
+		setLoading(false);
+	}
 
 	useEffect(() => {
 		const getData = async () => {

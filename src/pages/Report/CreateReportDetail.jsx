@@ -34,6 +34,7 @@ const CreateReportDetail = props => {
 	const [interpretations, setInterpretations] = useState({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [showModal, setShowModal] = useState(false);
+	const [showUnfinishedWorkModal, setShowUnfinishedWorkModal] = useState(false);
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -78,6 +79,7 @@ const CreateReportDetail = props => {
 	}, [selectedReport?.id]);
 
 	const onError = response => {
+		setIsLoading(false);
 		if (response.status === 403) {
 			setSnackbar({
 				show: true,
@@ -166,18 +168,13 @@ const CreateReportDetail = props => {
 		}
 	};
 	const onSaveReport = () => {
-		const formFilled =
-			referencesWithGenotypes.filter(rd => (localData[rd.id]?.genotype ? false : true))
-				.length === 0;
-
+		const formFilled = referencesWithGenotypes.filter(rd => !localData[rd.id]?.genotype).length === 0;
+		console.log(formFilled)
 		if (!formFilled) {
-			setSnackbar({
-				show: true,
-				message: 'Faltan campos por llenar',
-				className: 'error',
-			});
+			setShowUnfinishedWorkModal(true);
+		} else {
+			saveChanges();
 		}
-		saveChanges();
 	};
 
 	const filteredReferences = searchValue
@@ -256,6 +253,17 @@ const CreateReportDetail = props => {
 						onAccept={onCancel}
 						onReject={() => {
 							setShowModal(false);
+						}}
+					/>
+				)}
+				{showUnfinishedWorkModal && (
+					<AcceptModal
+					    className="unfinished-work-modal"
+						title='Campos vacíos'
+						message='No llenaste todos los Resultados, deseas continuar?'
+						onAccept={saveChanges}
+						onReject={() => {
+							setShowUnfinishedWorkModal(false);
 						}}
 					/>
 				)}

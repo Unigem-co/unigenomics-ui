@@ -3,12 +3,13 @@ import './Modal.scss';
 
 const Modal = (props) => {
   const {
+    className,
     onClose,
     children
   } = props;
 
   return (
-    <div className="modal-container" onClick={onClose}>
+    <div className={`${className} modal-container`} onClick={onClose}>
         <div className="modal">
             {children}
         </div>
