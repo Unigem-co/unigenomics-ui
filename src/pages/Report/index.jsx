@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { fileRequest, request } from '../../utils/fetch';
+import React, { useEffect, useState, useMemo } from 'react';
+import { fileRequest, request, generateReport } from '../../utils/fetch';
 import Form from '../../components/Form';
 import CreateReportDetail from './CreateReportDetail';
 import Table from '../../components/Table';
@@ -18,14 +18,19 @@ import {
 	IconButton,
 	Modal,
 	Backdrop,
-	Fade
+	Fade,
+	Stack,
+	TextField
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 import PageContainer from '../../components/PageContainer';
 import { translate } from '../../utils/translations';
 
 const USERS = 'users/user';
 const REPORTS = 'report';
+const REFERENCE_SNP = 'referenceSnp';
+const GENOTYPES = 'genotype';
 
 const dependencies = {
 	document_type: {
@@ -43,215 +48,258 @@ const dependencies = {
 	},
 };
 
+const schema = [
+	{
+		column_name: 'document_type',
+		type: 'select',
+		grid: { xs: 12, sm: 4 }
+	},
+	{
+		column_name: 'document',
+		type: 'text',
+		grid: { xs: 12, sm: 8 }
+	},
+	{
+		column_name: 'name',
+		type: 'text',
+		grid: { xs: 12 }
+	},
+	{
+		column_name: 'last_names',
+		type: 'text',
+		grid: { xs: 12 }
+	},
+	{
+		column_name: 'birth_date',
+		type: 'date',
+		grid: { xs: 12 }
+	},
+	{
+		column_name: 'prime_id',
+		type: 'text',
+		grid: { xs: 12 }
+	}
+];
+
 const Report = () => {
-	const [schema, setSchema] = useState({});
+	const [loading, setLoading] = useState(false);
 	const [users, setUsers] = useState([]);
 	const [selectedUser, setSelectedUser] = useState('');
 	const [showForm, setShowForm] = useState(false);
-	const [showCreateReportDetail, setShowCreateReportDetail] = useState(false);
 	const [reports, setReports] = useState([]);
-	const [selectedReport, setSelectedReport] = useState();
-	const [referencesWithGenotypes, setReferencesWithGenotypes] = useState([]);
-	const [, setSnackbar] = useSnackbar();
-	const [deleteRow, setDeleteRow] = useState({});
+	const [showCreateReportDetail, setShowCreateReportDetail] = useState(false);
+	const [selectedReport, setSelectedReport] = useState(null);
 	const [showModal, setShowModal] = useState(false);
-	const [loading, setLoading] = useState(false);
+	const [deleteRow, setDeleteRow] = useState(null);
+	const [fileUrl, setFileUrl] = useState(null);
 	const [reportGenerated, setReportGenerated] = useState(false);
-	const [fileUrl, setFileUrl] = useState();
+	const [showNewClientModal, setShowNewClientModal] = useState(false);
+	const [searchTerm, setSearchTerm] = useState('');
+	const [referenceSNPs, setReferenceSNPs] = useState([]);
+	const [, setSnackbar] = useSnackbar();
 
-	const onError = error => {
-		console.error('Error:', error);
-		setLoading(false);
+	const showSnackbarMessage = (className, message) => {
 		setSnackbar({
 			show: true,
-			message: translate('error_loading_data'),
-			className: 'error',
+			message,
+			className
 		});
-	}
+	};
 
 	useEffect(() => {
-		const getData = async () => {
-			setLoading(true);
+		const fetchUsers = async () => {
 			try {
-				const [usersResponse, schemaResponse, reportsResponse] = await Promise.all([
-					request(USERS, { method: 'GET' }),
-					request(`${USERS}/schema`, { method: 'GET' }),
-					request(REPORTS, { method: 'GET' })
-				]);
-
-				console.log('Users response:', usersResponse);
-				
-				if (Array.isArray(usersResponse)) {
-					setUsers(usersResponse);
-				} else if (usersResponse?.data && Array.isArray(usersResponse.data)) {
-					setUsers(usersResponse.data);
-				} else {
-					console.error('Unexpected users response format:', usersResponse);
-					onError(new Error('Invalid users data format'));
-					return;
-				}
-
-				setSchema(schemaResponse);
-				setReferencesWithGenotypes(reportsResponse);
+				setLoading(true);
+				const response = await request(USERS);
+				setUsers(response);
 			} catch (error) {
-				onError(error);
+				console.error('Error fetching users:', error);
+				showSnackbarMessage('error', translate('error_loading_users'));
 			} finally {
-			setLoading(false);
+				setLoading(false);
 			}
-		}
+		};
 
-		getData();
+		fetchUsers();
 	}, []);
 
 	useEffect(() => {
-		const fetchUserReports = async () => {
-			if (!selectedUser) return;
-			
-			setLoading(true);
+		const fetchReferenceSNPs = async () => {
 			try {
-				const response = await request(`${REPORTS}/userReports/${selectedUser}`, { method: 'GET' });
-				console.log('User reports response:', response);
-				
-				if (Array.isArray(response)) {
-					setReports(response);
-				} else if (response?.data && Array.isArray(response.data)) {
-					setReports(response.data);
-				} else {
-					console.error('Unexpected reports response format:', response);
-					setReports([]);
+				setLoading(true);
+				// Fetch reference SNPs with their available genotypes in a single request
+				const snpsResponse = await request(REFERENCE_SNP);
+				if (!snpsResponse || !Array.isArray(snpsResponse)) {
+					throw new Error('Invalid SNPs response format');
 				}
+
+				// Transform the response to match the expected format and ensure genotypes array exists
+				const snpsWithGenotypes = snpsResponse.map(snp => ({
+					...snp,
+					genotypes: Array.isArray(snp.genotypes) ? snp.genotypes.map(g => ({
+						genotype_id: g.genotype_id,
+						genotype_name: g.genotype_name
+					})) : []
+				}));
+
+				setReferenceSNPs(snpsWithGenotypes);
 			} catch (error) {
-				console.error('Error fetching user reports:', error);
-				setReports([]);
-				onError(error);
+				console.error('Error fetching reference SNPs:', error);
+				showSnackbarMessage('error', translate('error_loading_reference_snps'));
+				setReferenceSNPs([]); // Set empty array on error
 			} finally {
-			setLoading(false);
-		}
+				setLoading(false);
+			}
 		};
 
-		fetchUserReports();
-	}, [selectedUser]);
+		fetchReferenceSNPs();
+	}, []);
 
-	const onUserSelected = (event) => {
-		const value = event.target.value;
-		setShowForm(true);
-		setSelectedUser(value);
+	const fetchUserReports = async (userId) => {
+		try {
+			const response = await request(`${REPORTS}/userReports/${userId}`);
+			setReports(response);
+		} catch (error) {
+			console.error('Error fetching reports:', error);
+			showSnackbarMessage('error', translate('error_loading_reports'));
+			setReports([]);
+		}
 	};
 
-	const onDelete = async () => {
-		setLoading(true);
-		try {
-			await request('report', { 
-				method: 'DELETE', 
-				body: JSON.stringify(deleteRow),
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-			setSnackbar({
-				show: true,
-				message: translate('report_deleted'),
-				className: 'success',
-			});
-			
-			const updatedReports = await request(`${REPORTS}/userReports/${selectedUser}`, { method: 'GET' });
-			if (Array.isArray(updatedReports)) {
-				setReports(updatedReports);
-			} else if (updatedReports?.data && Array.isArray(updatedReports.data)) {
-				setReports(updatedReports.data);
-			}
-		} catch (error) {
-			onError(error);
-		} finally {
-			setLoading(false);
-			setShowModal(false);
-			setShowCreateReportDetail(false);
-		}
+	const onUserSelected = async (event) => {
+		const userId = event.target.value;
+		setSelectedUser(userId);
+		setShowForm(true);
+		setReports([]);
+		await fetchUserReports(userId);
 	};
 
 	const onReportCreated = async () => {
-		setLoading(true);
-		try {
-			const updatedReports = await request(`${REPORTS}/userReports/${selectedUser}`, { method: 'GET' });
-			if (Array.isArray(updatedReports)) {
-				setReports(updatedReports);
-			} else if (updatedReports?.data && Array.isArray(updatedReports.data)) {
-				setReports(updatedReports.data);
-			}
-		} catch (error) {
-			onError(error);
-		} finally {
-		setLoading(false);
+		// Refresh the reports list for the current user
+		if (selectedUser) {
+			await fetchUserReports(selectedUser);
+		}
 		setShowCreateReportDetail(false);
+		setSelectedReport(null);
+	};
+
+	const onGenerateReport = async (row) => {
+		try {
+			setLoading(true);
+			const blob = await generateReport(row.id);
+			
+			// Create a blob URL and open in new window
+			const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+			
+			// Open PDF in new window
+			const newWindow = window.open();
+			if (newWindow) {
+				newWindow.document.write(
+					`<iframe src="${blobUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+				);
+			} else {
+				// If popup blocked, create a download link
+				const link = document.createElement('a');
+				link.href = blobUrl;
+				link.download = `report-${row.id}.pdf`;
+				link.click();
+			}
+			
+			setFileUrl(blobUrl);
+			setReportGenerated(true);
+			showSnackbarMessage('success', translate('report_generated'));
+		} catch (error) {
+			console.error('Error generating report:', error);
+			showSnackbarMessage('error', translate('error_generating_report'));
+		} finally {
+			setLoading(false);
 		}
 	};
 
-	const onGenerateReport = report => {
-		console.log('Starting report generation...');
-		setLoading(true);
-		setShowCreateReportDetail(false);
-		
-		fileRequest(
-			`generate-report/${report.id}`,
-			{ 
-				method: 'POST'
-			},
-			response => {
-				console.log('Received API response (blob):', response);
-				console.log('Blob type:', response.type);
-				console.log('Blob size:', response.size);
-				
-				try {
-					// Create blob URL for PDF
-					const blobUrl = URL.createObjectURL(response);
-					console.log('Created blob URL:', blobUrl);
-					
-					// Set states in correct order
-					setFileUrl(blobUrl);
-					setLoading(false);
-					setReportGenerated(true);
-					
-					console.log('States updated, modal should display');
-				} catch (error) {
-					console.error('Error processing PDF:', error);
-					setSnackbar({
-						show: true,
-						message: translate('error_processing_pdf'),
-						className: 'error'
-					});
-					setLoading(false);
-					setReportGenerated(false);
-				}
-			},
-			error => {
-				console.error('Error generating report:', error);
-				setSnackbar({
-					show: true,
-					message: translate('error_generating_report'),
-					className: 'error'
-				});
-				setLoading(false);
-				setReportGenerated(false);
-			}
-		);
+	const handleDeleteReport = async () => {
+		try {
+			setLoading(true);
+			await request(`${REPORTS}/${deleteRow.id}`, { method: 'DELETE' });
+			setReports(prev => prev.filter(report => report.id !== deleteRow.id));
+			showSnackbarMessage('success', translate('report_deleted'));
+		} catch (error) {
+			console.error('Error deleting report:', error);
+			showSnackbarMessage('error', translate('error_deleting_report'));
+		} finally {
+			setLoading(false);
+			setShowModal(false);
+			setDeleteRow(null);
+		}
 	};
 
-	// Clean up the URL when component unmounts or when modal closes
+	const handleCreateClient = async (clientData) => {
+		try {
+			// Check if user with same document type and number exists
+			const existingUser = users.find(user => 
+				user.document_type === clientData.document_type && 
+				user.document === clientData.document
+			);
+
+			if (existingUser) {
+				showSnackbarMessage('error', translate('client_already_exists'));
+				return;
+			}
+
+			// Map birth_date to birdth_date for API compatibility and add role
+			const apiData = {
+				...clientData,
+				birdth_date: clientData.birth_date || new Date().toISOString().split('T')[0], // Set today as default if not provided
+				birth_date: undefined, // Remove birth_date as we're using birdth_date
+				role: 'user' // Add user role for clients
+			};
+
+			setLoading(true);
+			const response = await request(USERS, {
+				method: 'POST',
+				body: JSON.stringify(apiData)
+			});
+			
+			// Add new client to the list and select it
+			setUsers(prev => [...prev, response]);
+			setSelectedUser(response.id);
+			setShowForm(true);
+			setShowNewClientModal(false);
+			showSnackbarMessage('success', translate('client_created'));
+			
+			// Fetch reports for the new client
+			await fetchUserReports(response.id);
+		} catch (error) {
+			console.error('Error creating client:', error);
+			if (error.status === 409) {
+				showSnackbarMessage('error', translate('client_already_exists'));
+			} else if (error.message?.includes('birdth_date')) {
+				showSnackbarMessage('error', translate('birth_date_required'));
+			} else {
+				showSnackbarMessage('error', translate('error_creating_client'));
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	// Cleanup function for blob URLs
 	useEffect(() => {
 		return () => {
-			if (fileUrl && fileUrl.startsWith('blob:')) {
+			if (fileUrl) {
 				URL.revokeObjectURL(fileUrl);
 			}
 		};
 	}, [fileUrl]);
 
-	// When modal closes, clean up the URL
-	useEffect(() => {
-		if (!reportGenerated && fileUrl && fileUrl.startsWith('blob:')) {
-			URL.revokeObjectURL(fileUrl);
-			setFileUrl(null);
-		}
-	}, [reportGenerated]);
+	// Filter users based on search term
+	const filteredUsers = useMemo(() => {
+		return users.filter(user => {
+			const searchLower = searchTerm.toLowerCase();
+			const nameMatch = `${user.name || ''} ${user.last_names || ''}`.toLowerCase().includes(searchLower);
+			const documentMatch = (user.document || '').toLowerCase().includes(searchLower);
+			return nameMatch || documentMatch;
+		});
+	}, [users, searchTerm]);
 
 	return (
 		<PageContainer>
@@ -286,53 +334,110 @@ const Report = () => {
 						{translate('create_report')}
 					</Typography>
 					
-					{/* Client Dropdown */}
+					{/* Client Dropdown and Add Button */}
 					<Box sx={{ mb: 3 }}>
 						<Typography variant="subtitle1" sx={{ mb: 2 }}>
 							{translate('select_client')}:
 						</Typography>
-						<FormControl fullWidth sx={{ maxWidth: 400 }}>
-							<InputLabel id="user-select-label">{translate('select_client')}</InputLabel>
-							<MuiSelect
-								labelId="user-select-label"
-								id="user-select"
-								value={selectedUser}
-								label={translate('select_client')}
-								onChange={onUserSelected}
-								sx={{ 
-									'& .MuiOutlinedInput-notchedOutline': {
-										borderColor: 'primary.main',
-									},
-									'&:hover .MuiOutlinedInput-notchedOutline': {
-										borderColor: 'primary.dark',
-									},
-								}}
-							>
-								{users && users.length > 0 ? (
-									users.map(user => (
-										<MenuItem key={user.id} value={user.id}>
-											{`${user.document || ''} - ${user.name || ''} ${user.last_names || ''}`}
+						<Stack direction="row" spacing={1} alignItems="center" sx={{ maxWidth: 600 }}>
+							<FormControl fullWidth>
+								<InputLabel id="user-select-label">{translate('select_client')}</InputLabel>
+								<MuiSelect
+									key={users.length}
+									labelId="user-select-label"
+									id="user-select"
+									value={selectedUser}
+									label={translate('select_client')}
+									onChange={onUserSelected}
+									displayEmpty
+									renderValue={(selected) => {
+										if (!selected) {
+											return '';
+										}
+										const user = users.find(u => u.id === selected);
+										return user ? `${user.document || ''} - ${user.name || ''} ${user.last_names || ''}` : '';
+									}}
+									sx={{ 
+										'& .MuiOutlinedInput-notchedOutline': {
+											borderColor: 'primary.main',
+										},
+										'&:hover .MuiOutlinedInput-notchedOutline': {
+											borderColor: 'primary.dark',
+										},
+									}}
+									onOpen={() => setSearchTerm('')}
+									MenuProps={{
+										PaperProps: {
+											style: {
+												maxHeight: 48 * 4.5 + 8,
+												width: 250,
+											},
+										},
+									}}
+								>
+									<Box sx={{ p: 1, position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1 }}>
+										<TextField
+											fullWidth
+											size="small"
+											value={searchTerm}
+											onChange={(e) => setSearchTerm(e.target.value)}
+											placeholder={translate('search_client')}
+											onClick={(e) => e.stopPropagation()}
+											sx={{
+												'& .MuiOutlinedInput-root': {
+													'& fieldset': {
+														borderColor: 'primary.main',
+													},
+													'&:hover fieldset': {
+														borderColor: 'primary.dark',
+													},
+												},
+											}}
+										/>
+									</Box>
+									{filteredUsers && filteredUsers.length > 0 ? (
+										filteredUsers.map(user => (
+											<MenuItem key={user.id} value={user.id}>
+												{`${user.document || ''} - ${user.name || ''} ${user.last_names || ''}`}
+											</MenuItem>
+										))
+									) : (
+										<MenuItem disabled>
+											{searchTerm ? translate('no_results') : translate('no_clients_available')}
 										</MenuItem>
-									))
-								) : (
-									<MenuItem disabled>{translate('no_clients_available')}</MenuItem>
-								)}
-							</MuiSelect>
-						</FormControl>
+									)}
+								</MuiSelect>
+							</FormControl>
+							<IconButton
+								onClick={() => setShowNewClientModal(true)}
+								sx={{
+									bgcolor: 'primary.main',
+									color: 'white',
+									'&:hover': {
+										bgcolor: 'primary.dark',
+									},
+									width: 40,
+									height: 40,
+								}}
+								title={translate('add_client')}
+							>
+								<AddIcon />
+							</IconButton>
+						</Stack>
 					</Box>
 
 					{/* Client Information and Reports Section */}
-					{showForm && (
+					{showForm && selectedUser && (
 						<Box sx={{ 
 							display: 'flex',
 							flexDirection: { xs: 'column', md: 'row' },
-							gap: 2,
+							gap: 3,
 							flex: 1,
 							minHeight: 0
 						}}>
 							{/* Client Information */}
 							<Box sx={{ 
-								flex: 1,
+								flex: { xs: '1', md: '0 0 400px' },
 								display: 'flex',
 								flexDirection: 'column'
 							}}>
@@ -344,8 +449,10 @@ const Report = () => {
 									sx={{ 
 										p: 2,
 										flex: 1,
-										overflowY: 'auto',
+										display: 'flex',
+										flexDirection: 'column',
 										minHeight: 0,
+										width: '100%',
 										'&::-webkit-scrollbar': {
 											width: '8px',
 										},
@@ -365,10 +472,12 @@ const Report = () => {
 									<Form
 										disabled
 										schema={schema}
-										data={users.find(user => user.id === selectedUser)}
+										data={{
+											...users.find(user => user.id === selectedUser),
+											birth_date: users.find(user => user.id === selectedUser)?.birdth_date,
+										}}
 										dependencies={dependencies}
 										stackFields={true}
-										onSave={() => {}}
 									/>
 								</Paper>
 								<Box sx={{ 
@@ -398,7 +507,8 @@ const Report = () => {
 							<Box sx={{ 
 								flex: 1,
 								display: 'flex',
-								flexDirection: 'column'
+								flexDirection: 'column',
+								minWidth: 0
 							}}>
 								<Typography variant="h6" sx={{ mb: 2 }}>
 									{translate('available_reports')}
@@ -429,12 +539,13 @@ const Report = () => {
 									{reports?.length > 0 ? (
 										<Table
 											data={reports}
-											columns={Object.keys(reports[0]).map(key =>
-												key === 'observations' ? {} : { 
+											columns={Object.keys(reports[0])
+												.filter(key => key !== 'observations')
+												.map(key => ({ 
 													column_name: key,
 													display_name: translate(key)
-												},
-											)}
+												}))
+											}
 											onUpdate={value => {
 												setSelectedReport(value);
 												setShowCreateReportDetail(true);
@@ -471,7 +582,8 @@ const Report = () => {
 					)}
 				</Paper>
 
-			{showCreateReportDetail && (
+				{/* Create Report Detail Modal */}
+				{showCreateReportDetail && (
 					<Box sx={{
 						position: 'fixed',
 						top: 0,
@@ -511,113 +623,70 @@ const Report = () => {
 								p: 3,
 								position: 'relative'
 							}}>
-				<CreateReportDetail
-					user={selectedUser}
-					referencesWithGenotypes={referencesWithGenotypes}
-					selectedReport={selectedReport}
-					onReportCreated={onReportCreated}
-					onCancel={() => setShowCreateReportDetail(false)}
-				/>
+								<CreateReportDetail
+									user={selectedUser}
+									selectedReport={selectedReport}
+									onReportCreated={onReportCreated}
+									onCancel={() => setShowCreateReportDetail(false)}
+									referencesWithGenotypes={referenceSNPs}
+								/>
 							</Box>
 						</Paper>
 					</Box>
-			)}
+				)}
 
-			{reportGenerated && fileUrl && (
+				{/* New Client Modal */}
 				<Modal
-					open={true}
-					onClose={() => {
-						console.log('Closing modal...');
-						if (fileUrl && fileUrl.startsWith('blob:')) {
-							URL.revokeObjectURL(fileUrl);
-						}
-						setReportGenerated(false);
-						setFileUrl(null);
-						setLoading(false);
-					}}
+					open={showNewClientModal}
+					onClose={() => setShowNewClientModal(false)}
 					closeAfterTransition
-					slots={{ backdrop: Backdrop }}
+					slots={{
+						backdrop: Backdrop
+					}}
 					slotProps={{
 						backdrop: {
 							timeout: 500,
 						},
 					}}
-					sx={{
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-					}}
 				>
-					<Fade in={true}>
-						<Box
-							sx={{
-								position: 'fixed',
-								top: 0,
-								left: 0,
-								right: 0,
-								bottom: 0,
-								bgcolor: 'background.paper',
-								display: 'flex',
-								flexDirection: 'column',
-								p: 2,
-								zIndex: theme => theme.zIndex.modal + 1
-							}}
-						>
-							<Box sx={{ 
-								display: 'flex', 
-								justifyContent: 'flex-end',
-								mb: 1
-							}}>
-								<IconButton 
-									onClick={() => {
-										console.log('Close button clicked');
-										if (fileUrl && fileUrl.startsWith('blob:')) {
-											URL.revokeObjectURL(fileUrl);
-										}
-										setReportGenerated(false);
-										setFileUrl(null);
-										setLoading(false);
-									}}
-									size="large"
-									sx={{ 
-										color: 'text.secondary',
-										'&:hover': {
-											color: 'text.primary',
-											bgcolor: 'action.hover'
-										}
-									}}
-								>
-									<CloseIcon />
-								</IconButton>
-							</Box>
-							
-							<Box
-								component="iframe"
-								src={fileUrl}
-								title="PDF Report"
-								sx={{
-									flex: 1,
-									border: 'none',
-									width: '100%',
-									height: 'calc(100vh - 64px)',  // Subtract header height
-									zIndex: theme => theme.zIndex.modal + 2
-								}}
+					<Fade in={showNewClientModal}>
+						<Box sx={{
+							position: 'absolute',
+							top: '50%',
+							left: '50%',
+							transform: 'translate(-50%, -50%)',
+							width: '100%',
+							maxWidth: 600,
+							bgcolor: 'background.paper',
+							boxShadow: 24,
+							p: 4,
+							borderRadius: 2,
+						}}>
+							<Typography variant="h6" sx={{ mb: 3 }}>
+								{translate('new_client')}
+							</Typography>
+							<Form
+								schema={schema}
+								dependencies={dependencies}
+								onSave={handleCreateClient}
+								onCancel={() => setShowNewClientModal(false)}
 							/>
 						</Box>
 					</Fade>
 				</Modal>
-			)}
 
-			{showModal && (
-				<AcceptModal
-					title={translate('delete_report')}
-					message={translate('delete_report_confirm')}
-					onAccept={onDelete}
-					onReject={() => {
-						setShowModal(false);
-					}}
-				/>
-			)}
+				{/* Delete Confirmation Modal */}
+				{showModal && (
+					<AcceptModal
+						title={translate('delete_report')}
+						message={translate('delete_report_confirmation')}
+						onAccept={handleDeleteReport}
+						onReject={() => {
+							setShowModal(false);
+							setDeleteRow(null);
+						}}
+					/>
+				)}
 			</Box>
 		</PageContainer>
 	);

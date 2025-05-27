@@ -16,19 +16,27 @@ import SearchInput from '../SearchInput';
 import ActionButton from '../ActionButton';
 
 const Table = ({ 
-		data, 
-		columns, 
-		onUpdate, 
-		onCreate, 
-		onDelete,
-		onUpdateText,
-		onUpdateTooltip,
-	extraOptions,
+	data = [], 
+	columns = [], 
+	onUpdate, 
+	onCreate, 
+	onDelete,
+	onUpdateText,
+	onUpdateTooltip,
+	extraOptions = [],
 	title,
 	isLoading
 }) => {
 	const [pageSize, setPageSize] = useState(10);
 	const [searchTerm, setSearchTerm] = useState('');
+
+	// Ensure each row has a unique ID
+	const processedData = React.useMemo(() => {
+		return data.map((row, index) => ({
+			...row,
+			_uniqueId: row.id || `row-${index}-${Date.now()}`
+		}));
+	}, [data]);
 
 	// Debug logging
 	useEffect(() => {
@@ -36,68 +44,45 @@ const Table = ({
 		console.log('Table Columns:', columns);
 	}, [data, columns]);
 
+	// Action column configuration
 	const actionColumn = {
 		field: 'actions',
 		headerName: 'Acciones',
-		width: 150,
 		sortable: false,
 		filterable: false,
-		renderHeader: () => (
-			<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-							<span>Acciones</span>
-				{onCreate && (
-					<Tooltip title="Nuevo">
-						<IconButton
-							onClick={onCreate}
-							size="small"
-							color="primary"
-						>
-							<AddIcon />
-						</IconButton>
-					</Tooltip>
-				)}
-			</Box>
-		),
+		width: 150,
 		renderCell: (params) => (
-			<Box>
-									{onUpdate && (
-					<Tooltip title={onUpdateTooltip || 'Editar'}>
-						<IconButton
-							onClick={(e) => {
-								e.stopPropagation();
-								onUpdate(params.row);
-											}}
+			<Box sx={{ display: 'flex', gap: 1 }}>
+				{onUpdate && (
+					<Tooltip title={onUpdateTooltip || translate('edit')}>
+						<IconButton 
 							size="small"
-							color="primary"
+							onClick={() => onUpdate(params.row)}
+							sx={{ color: 'primary.main' }}
 						>
 							<EditIcon />
 						</IconButton>
 					</Tooltip>
-									)}
-									{onDelete && (
-					<Tooltip title="Eliminar">
+				)}
+				{onDelete && (
+					<Tooltip title={translate('delete')}>
 						<IconButton
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete(params.row);
-							}}
 							size="small"
-							color="error"
+							onClick={() => onDelete(params.row)}
+							sx={{ color: 'error.main' }}
 						>
 							<DeleteIcon />
 						</IconButton>
 					</Tooltip>
 				)}
-				{extraOptions?.map(({ onClick, icon, title }) => (
-					<Tooltip key={title} title={title}>
+				{extraOptions.map((option, index) => (
+					<Tooltip key={index} title={option.title}>
 						<IconButton
-							onClick={(e) => {
-								e.stopPropagation();
-								onClick(params.row);
-							}}
 							size="small"
+							onClick={() => option.onClick(params.row)}
+							sx={{ color: 'primary.main' }}
 						>
-							<i className={icon} />
+							<i className={option.icon}></i>
 						</IconButton>
 					</Tooltip>
 				))}
@@ -195,14 +180,14 @@ const Table = ({
 	];
 
 	const filteredData = React.useMemo(() => {
-		if (!searchTerm) return data;
-		return data.filter(row => 
+		if (!searchTerm) return processedData;
+		return processedData.filter(row => 
 			Object.entries(row).some(([key, value]) => {
-				if (value == null) return false;
+				if (value == null || key === '_uniqueId') return false;
 				return String(value).toLowerCase().includes(searchTerm.toLowerCase());
 			})
 		);
-	}, [data, searchTerm]);
+	}, [processedData, searchTerm]);
 
 	return (
 		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -244,7 +229,7 @@ const Table = ({
 					pagination
 					disableRowSelectionOnClick
 					disableColumnMenu
-					getRowId={(row) => row.id || Math.random()}
+					getRowId={(row) => row._uniqueId}
 					loading={isLoading}
 					slots={{
 						toolbar: () => (

@@ -16,6 +16,9 @@ const year = date.getFullYear();
 const month = date.getMonth() + 1 > 9 ? date.getMonth() + 1 : `0${date.getMonth() + 1}`;
 const day = date.getDate() > 9 ? date.getDate() : `0${date.getDate()}`;
 
+const REPORTS = 'report';
+const INTERPRETATIONS = 'interpretation';
+
 const createInitialLocalData = referencesWithGenotypes =>
 	referencesWithGenotypes?.reduce(
 		(prev, curr) => ({
@@ -38,48 +41,115 @@ const CreateReportDetail = props => {
 	const [showModal, setShowModal] = useState(false);
 	const [showUnfinishedWorkModal, setShowUnfinishedWorkModal] = useState(false);
 
+	const showSnackbarMessage = (className, message) => {
+		setSnackbar({
+			show: true,
+			message,
+			className
+		});
+	};
+
 	useEffect(() => {
 		setIsLoading(true);
 		if (selectedReport?.id) {
 			request(
-				`report/detailed/${selectedReport?.id}`,
+				`${REPORTS}/detailed/${selectedReport?.id}`,
 				{ method: 'GET' },
-				data => {
-					const newLocalData = data.reduce(
-						(prev, curr) => ({
-							...prev,
-							[curr.reference_snp]: {
-								genotype: curr.result,
-								genotypeEffect: curr.genotype_effect,
+				async data => {
+					try {
+						// Create initial data structure for all reference SNPs
+						const initialData = createInitialLocalData(referencesWithGenotypes);
+						
+						// Update with saved values and their interpretations
+						const newLocalData = data.reduce(
+							(prev, curr) => ({
+								...prev,
+								[curr.reference_snp]: {
+									genotype: curr.result,
+									genotype_name: curr.genotype_name
+								},
+							}),
+							initialData
+						);
+
+						// Set initial interpretations as undefined to show loading state
+						const initialInterpretations = data.reduce(
+							(prev, curr) => ({
+								...prev,
+								[curr.reference_snp]: undefined,
+							}),
+							{},
+						);
+						setInterpretations(initialInterpretations);
+
+						// Fetch interpretations for all selected genotypes
+						const interpretationPromises = data.map(async (item) => {
+							if (item.result) {
+								try {
+									const response = await request(
+										`${INTERPRETATIONS}/findResultInterpretation/${item.reference_snp}/${item.result}`,
+										{ method: 'GET' }
+									);
+									return {
+										reference_snp: item.reference_snp,
+										interpretation: response.interpretation
+									};
+								} catch (error) {
+									console.error('Error fetching interpretation:', error);
+									return {
+										reference_snp: item.reference_snp,
+										interpretation: translate('error_loading_interpretation')
+									};
+								}
+							}
+							return null;
+						});
+
+						const interpretationResults = await Promise.all(interpretationPromises);
+						
+						// Update interpretations state with fetched values
+						const newInterpretations = interpretationResults.reduce(
+							(prev, curr) => {
+								if (!curr) return prev;
+								return {
+									...prev,
+									[curr.reference_snp]: curr.interpretation,
+								};
 							},
-						}),
-						{},
-					);
-					const newInterpretations = data.reduce(
-						(prev, curr) => ({
-							...prev,
-							[curr.reference_snp]: curr.interpretation,
-						}),
-						{},
-					);
-					setReportDate(selectedReport.report_date);
-					setSamplingDate(selectedReport.sampling_date);
-					setObservations(selectedReport.observations ?? '');
-					setInterpretations(newInterpretations);
-					setLocalData(newLocalData);
-					setIsLoading(false);
+							{},
+						);
+
+						setReportDate(selectedReport.report_date);
+						setSamplingDate(selectedReport.sampling_date);
+						setObservations(selectedReport.observations ?? '');
+						setInterpretations(newInterpretations);
+						setLocalData(newLocalData);
+					} catch (error) {
+						console.error('Error processing report data:', error);
+						showSnackbarMessage('error', translate('error_loading_report'));
+					} finally {
+						setIsLoading(false);
+					}
 				},
 				onError,
 			);
 		} else {
-			setLocalData(createInitialLocalData(referencesWithGenotypes));
+			// Initialize with empty values for all reference SNPs
+			const initialData = referencesWithGenotypes.reduce(
+				(prev, curr) => ({
+					...prev,
+					[curr.id]: { genotype: null, genotype_name: null },
+				}),
+				{},
+			);
+			setLocalData(initialData);
 			setSamplingDate(`${year}-${month}-${day}`);
 			setReportDate(`${year}-${month}-${day}`);
 			setObservations('');
 			setInterpretations({});
 			setIsLoading(false);
 		}
-	}, [selectedReport?.id]);
+	}, [selectedReport?.id, referencesWithGenotypes]);
 
 	const onError = response => {
 		setIsLoading(false);
@@ -100,13 +170,15 @@ const CreateReportDetail = props => {
 
 	const onGenotypeSelected = (value, referenceSnp) => {
 		const rsId = referenceSnp.id;
+		
+		// Only fetch interpretation when selecting a new genotype (not when loading saved data)
 		setInterpretations(prev => ({
 			...prev,
 			[rsId]: undefined // Set to undefined to show loading state
 		}));
 		
 		request(
-			`interpretation/findResultInterpretation/${rsId}/${value}`,
+			`${INTERPRETATIONS}/findResultInterpretation/${rsId}/${value}`,
 			{ method: 'GET' },
 			data => {
 				setInterpretations(prev => ({
@@ -116,17 +188,23 @@ const CreateReportDetail = props => {
 			},
 			onError,
 		);
-		setLocalData({
-			...localData,
-			[rsId]: { ...localData[rsId], genotype: value },
-		});
+
+		// Update local data with the selected genotype
+		const selectedGenotype = referenceSnp.genotypes.find(g => g.genotype_id === value);
+		setLocalData(prev => ({
+			...prev,
+			[rsId]: { 
+				genotype: value,
+				genotype_name: selectedGenotype?.genotype_name
+			}
+		}));
 	};
 
 	const saveChanges = () => {
 		setIsLoading(true);
 		if (selectedReport?.id) {
 			request(
-				'report',
+				REPORTS,
 				{
 					method: 'PUT',
 					body: {
@@ -146,7 +224,14 @@ const CreateReportDetail = props => {
 					onReportCreated();
 					setIsLoading(false);
 				},
-				onError,
+				(error) => {
+					setIsLoading(false);
+					setSnackbar({
+						show: true,
+						message: error.data?.message || translate('error_updating_report'),
+						className: 'error',
+					});
+				}
 			);
 		} else {
 			const detail = Object.keys(localData).reduce(
@@ -159,8 +244,17 @@ const CreateReportDetail = props => {
 				{},
 			);
 			request(
-				'report',
-				{ method: 'POST', body: { user, reportDate, samplingDate, observations, detail } },
+				REPORTS,
+				{ 
+					method: 'POST', 
+					body: { 
+						user, 
+						reportDate, 
+						samplingDate, 
+						observations, 
+						detail 
+					} 
+				},
 				() => {
 					setSnackbar({
 						show: true,
@@ -170,19 +264,52 @@ const CreateReportDetail = props => {
 					onReportCreated();
 					setIsLoading(false);
 				},
-				onError,
+				(error) => {
+					setIsLoading(false);
+					setSnackbar({
+						show: true,
+						message: error.data?.message || translate('error_creating_report'),
+						className: 'error',
+					});
+				}
 			);
 		}
 	};
 
 	const onSaveReport = () => {
-		const formFilled = referencesWithGenotypes.filter(rd => !localData[rd.id]?.genotype).length === 0;
-		console.log(formFilled)
-		if (!formFilled) {
+		const unfilledGenotypes = referencesWithGenotypes.filter(rd => !localData[rd.id]?.genotype).length;
+		const hasUnfilledGenotypes = unfilledGenotypes > 0;
+		
+		if (hasUnfilledGenotypes) {
 			setShowUnfinishedWorkModal(true);
 		} else {
 			saveChanges();
 		}
+	};
+
+	const onDeleteReport = (reportId) => {
+		setIsLoading(true);
+		request(
+			`${REPORTS}/${reportId}`,
+			{ method: 'DELETE' },
+			() => {
+				setSnackbar({
+					show: true,
+					message: translate('report_deleted'),
+					className: 'success',
+				});
+				onReportCreated();
+				setIsLoading(false);
+			},
+			(error) => {
+				setIsLoading(false);
+				setSnackbar({
+					show: true,
+					message: error.data?.message || translate('error_deleting_report'),
+					className: 'error',
+				});
+			}
+		);
 	};
 
 	const filteredReferences = searchValue
@@ -369,15 +496,23 @@ const CreateReportDetail = props => {
 												value={localData[r.id]?.genotype || ''}
 												onChange={(event) => onGenotypeSelected(event.target.value, r)}
 												label={translate('select_genotype')}
+												disabled={isLoading}
 												MenuProps={{
 													PaperProps: {
 														sx: {
+															maxHeight: 300,
 															bgcolor: '#ffffff',
 															boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
 															'& .MuiMenuItem-root': {
 																color: 'black',
 																'&:hover': {
 																	bgcolor: '#f5f5f5'
+																},
+																'&.Mui-selected': {
+																	bgcolor: '#e3f2fd',
+																	'&:hover': {
+																		bgcolor: '#bbdefb'
+																	}
 																}
 															}
 														}
@@ -389,10 +524,11 @@ const CreateReportDetail = props => {
 												}}
 											>
 												{r.genotypes && r.genotypes.length > 0 ? (
-													r.genotypes.map((g, index) => (
+													r.genotypes.map((g) => (
 														<MenuItem 
-															key={`${g.genotype_id}-${index}`} 
+															key={g.genotype_id}
 															value={g.genotype_id}
+															selected={localData[r.id]?.genotype === g.genotype_id}
 														>
 															{g.genotype_name}
 														</MenuItem>
@@ -405,17 +541,30 @@ const CreateReportDetail = props => {
 											</MuiSelect>
 										</FormControl>
 
-										{localData[r.id]?.genotype && (
-											<Box 
-												sx={{
-													mt: 2,
-													p: 2,
-													bgcolor: '#f5f5f5',
-													borderRadius: 1,
-													border: '1px solid rgba(0, 0, 0, 0.12)'
-												}}
-											>
-												{interpretations[r.id] === undefined ? (
+										{/* Interpretation Section */}
+										<Box 
+											sx={{
+												mt: 2,
+												p: 2,
+												bgcolor: '#f5f5f5',
+												borderRadius: 1,
+												border: '1px solid rgba(0, 0, 0, 0.12)',
+												minHeight: '80px',
+												display: 'flex',
+												flexDirection: 'column',
+												justifyContent: 'center'
+											}}
+										>
+											<Typography variant="subtitle2" sx={{ 
+												fontWeight: 'bold',
+												mb: 1,
+												color: 'black'
+											}}>
+												{translate('interpretation')}:
+											</Typography>
+											
+											{localData[r.id]?.genotype ? (
+												interpretations[r.id] === undefined ? (
 													<Box sx={{ width: '100%' }}>
 														<Typography variant="body2" sx={{ 
 															mb: 1,
@@ -433,21 +582,16 @@ const CreateReportDetail = props => {
 														/>
 													</Box>
 												) : (
-													<>
-														<Typography variant="subtitle2" sx={{ 
-															fontWeight: 'bold',
-															mb: 1,
-															color: 'black'
-														}}>
-															{translate('interpretation')}:
-														</Typography>
-														<Typography sx={{ color: 'black' }}>
-															{interpretations[r.id] || translate('no_interpretation')}
-														</Typography>
-													</>
-												)}
-											</Box>
-										)}
+													<Typography sx={{ color: 'black' }}>
+														{interpretations[r.id] || translate('no_interpretation')}
+													</Typography>
+												)
+											) : (
+												<Typography sx={{ color: 'rgba(0, 0, 0, 0.6)', fontStyle: 'italic' }}>
+													{translate('select_genotype_to_see_interpretation')}
+												</Typography>
+											)}
+										</Box>
 									</Paper>
 								))
 							) : (
@@ -498,7 +642,22 @@ const CreateReportDetail = props => {
 				</Box>
 			</Box>
 
-			{/* Render AcceptModal outside the main container */}
+			{/* Unfinished Work Modal */}
+			{showUnfinishedWorkModal && (
+				<AcceptModal
+					title={translate('unfinished_work')}
+					message={translate('unfinished_work_message')}
+					onAccept={() => {
+						setShowUnfinishedWorkModal(false);
+						saveChanges();
+					}}
+					onReject={() => {
+						setShowUnfinishedWorkModal(false);
+					}}
+				/>
+			)}
+
+			{/* Cancel Modal */}
 			{showModal && (
 				<AcceptModal
 					title={selectedReport?.id ? translate('cancel_edit') : translate('cancel_create')}

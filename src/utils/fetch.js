@@ -1,7 +1,7 @@
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 export const request = async (endpoint, options = {}, onSuccess, onError) => {
-  console.log(`Making ${options.method} request to ${endpoint}`, {
+  console.log(`Making ${options.method || 'GET'} request to ${endpoint}`, {
     options,
     body: options.body
   });
@@ -19,6 +19,7 @@ export const request = async (endpoint, options = {}, onSuccess, onError) => {
   };
 
   const config = {
+    method: options.method || 'GET',
     ...options,
     headers: {
       ...defaultHeaders,
@@ -96,7 +97,7 @@ export const request = async (endpoint, options = {}, onSuccess, onError) => {
   }
 };
 
-export const fileRequest = (endpoint, options = {}, onSuccess, onError) => {
+export const fileRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
   if (!token) {
     console.error('No token found');
@@ -109,6 +110,7 @@ export const fileRequest = (endpoint, options = {}, onSuccess, onError) => {
   };
 
   const config = {
+    method: options.method || 'GET',
     ...options,
     headers: {
       ...defaultHeaders,
@@ -122,29 +124,69 @@ export const fileRequest = (endpoint, options = {}, onSuccess, onError) => {
     headers: config.headers
   });
 
-  fetch(`${API_URL}/${endpoint}`, config)
-    .then(async (response) => {
-      console.log('File response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          throw new Error('Sesión expirada o acceso denegado');
-        }
-        throw new Error('Error al procesar el archivo');
-      }
-      
-      // Return blob for binary PDF data
-      const blob = await response.blob();
-      onSuccess(blob);
-    })
-    .catch(error => {
-      console.error('File request failed:', error);
-      onError(error);
+  try {
+    const response = await fetch(`${API_URL}/${endpoint}`, config);
+    console.log('File response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
     });
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        throw new Error('Sesión expirada o acceso denegado');
+      }
+
+      let errorMessage = 'Error al procesar el archivo';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If we can't parse JSON, use the default message
+      }
+      throw new Error(errorMessage);
+    }
+    
+    // Return blob for binary PDF data
+    return await response.blob();
+  } catch (error) {
+    console.error('File request failed:', error);
+    throw error;
+  }
+};
+
+export const generateReport = async (reportId) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.error('No token found');
+    window.location.href = '/login';
+    return;
+  }
+  
+  const config = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  };
+
+  try {
+    const response = await fetch(`${API_URL}/generate-report/${reportId}`, config);
+    
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        throw new Error('Sesión expirada o acceso denegado');
+      }
+      throw new Error('Error al generar el reporte');
+    }
+    
+    return await response.blob();
+  } catch (error) {
+    console.error('Report generation failed:', error);
+    throw error;
+  }
 };
