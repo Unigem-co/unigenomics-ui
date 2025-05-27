@@ -1,57 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import DependentData from '../../components/DependentData';
+import React, { useState, useEffect } from 'react';
+import FlatData from '../../components/FlatData';
 import { request } from '../../utils/fetch';
 import Loading from '../../components/Loading';
 
-const deps = {
-	config: {
+const Interpretations = () => {
+	const [isLoading, setIsLoading] = useState(true);
+	const [dependencies, setDependencies] = useState(null);
+	const [error, setError] = useState(null);
+	const [data, setData] = useState([]);
+	const [schema, setSchema] = useState([]);
+
+	const fetchData = async () => {
+		setIsLoading(true);
+		try {
+			const [dataResponse, schemaResponse] = await Promise.all([
+				request('interpretation', { method: 'GET' }),
+				request('interpretation/schema', { method: 'GET' })
+			]);
+			setData(dataResponse);
+			setSchema(schemaResponse);
+		} catch (err) {
+			console.error('Error fetching data:', err);
+			setError(err);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		const fetchDependencies = async () => {
+			try {
+				const [snps, genotypes, effects] = await Promise.all([
+					request('referenceSnp', { method: 'GET' }),
+					request('genotype', { method: 'GET' }),
+					request('genotypeEffect', { method: 'GET' })
+				]);
+
+				setDependencies({
 		reference_snp: {
 			displayValue: 'rs_name',
+						data: snps
 		},
 		genotype: {
 			displayValue: 'genotype_name',
-		},
-	},
-};
+						data: genotypes
+					},
+					genotype_effect: {
+						displayValue: 'name',
+						data: effects
+					}
+				});
 
-const Interpretations = () => {
-  const [genotypes, setGenotypes] = useState([]);
-  const [referenceSnp, setReferenceSnp] = useState([]);
-  const [genotypeEffects, setGenotypeEffects] = useState([]);
-  const [dependencies, setDependencies] = useState(deps);
-  const [isLoading, setIsLoading] = useState(false);
+				// After dependencies are loaded, fetch the main data
+				await fetchData();
+			} catch (err) {
+				console.error('Error fetching dependencies:', err);
+				setError(err);
+				setIsLoading(false);
+			}
+		};
 
-  const onError = error => {
-		console.log(error);
+		fetchDependencies();
+	}, []);
+
+	const handleSave = async (values) => {
+		setIsLoading(true);
+		try {
+			if (values.id) {
+				await request('interpretation', { method: 'PUT', body: values });
+			} else {
+				await request('interpretation', { method: 'POST', body: values });
+			}
+			await fetchData();
+		} catch (err) {
+			console.error('Error saving:', err);
+			setError(err);
+		} finally {
 		setIsLoading(false);
+		}
   };
 
-  useEffect(() => {
-		const getData = async () => {
+	const handleDelete = async (row) => {
 			setIsLoading(true);
-			await request('genotype', { method: 'GET' }, d => setGenotypes(d), onError);
-			await request('referenceSnp',{ method: 'GET' },d => setReferenceSnp(d),onError,);
-			await request('genotypeEffect',{ method: 'GET' },d => setGenotypeEffects(d),onError,
-			);
+		try {
+			await request('interpretation', { method: 'DELETE', body: row });
+			await fetchData();
+		} catch (err) {
+			console.error('Error deleting:', err);
+			setError(err);
+		} finally {
 			setIsLoading(false);
 		}
-		getData();
-  }, []);
+	};
 
-  useEffect(() => {
-		setDependencies({
-			genotype: { displayValue: 'genotype_name', data: genotypes },
-			reference_snp: { displayValue: 'rs_name', data: referenceSnp },
-			genotype_effect: { displayValue: 'name', data: genotypeEffects },
-		});
-  }, [genotypes, referenceSnp, genotypeEffects]);
+	if (error) {
+		return <div>Error cargando datos. Por favor, intente más tarde.</div>;
+	}
 
   return (
-		<>
-			{isLoading && <Loading />}
-			<DependentData endpoint='interpretation' dependencies={dependencies} />
-		</>
+		<FlatData
+			data={data}
+			schema={schema}
+			title="Administración de Interpretaciones"
+			dependencies={dependencies}
+			isLoading={isLoading}
+			onSave={handleSave}
+			onDelete={handleDelete}
+		/>
   );
 }
 
-export default Interpretations
+export default Interpretations;

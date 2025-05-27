@@ -1,117 +1,211 @@
 import React, { useEffect, useState } from 'react';
+import { 
+	Box,
+	TextField,
+	Select as MuiSelect,
+	MenuItem,
+	FormControl,
+	InputLabel,
+	Button,
+	Stack,
+	Grid
+} from '@mui/material';
 import { translate } from '../../utils/translations';
-import Input from '../Input';
-import './Form.scss';
-import TextArea from '../TextArea';
-import Select from '../Select';
-import AcceptModal from '../Modal/AcceptModal';
-import Password from '../Input/Password';
 
-const Form = props => {
-	const { schema, data, dependencies, onSave, onCancel, disabled } = props;
-	const defaults = Object.keys(data).legnth
+const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, stackFields = false }) => {
+	const defaults = Object.keys(data || {}).length
 		? data
-		: schema.reduce((prev, curr) => ({ ...prev, [curr.column_name]: null }), {});
+		: schema?.reduce((prev, curr) => ({ ...prev, [curr.column_name]: null }), {});
 	const [values, setValues] = useState(defaults);
 
 	useEffect(() => {
-		const defaults = Object.keys(data).length
+		const defaults = Object.keys(data || {}).length
 			? data
-			: schema.reduce((prev, curr) => {
+			: schema?.reduce((prev, curr) => {
 					return {
 						...prev,
 						[curr.column_name]:
 							curr.column_name === 'id' || !dependencies
 								? null
-								: dependencies[curr.column_name]
-								? dependencies[curr.column_name].data[0][
-										dependencies[curr.column_name].displayValue
-								  ]
-								: null,
+								: dependencies[curr.column_name]?.data?.[0]?.[
+										dependencies[curr.column_name]?.displayValue
+								  ] ?? null,
 					};
 			  }, {});
+
 		const transformedValues = dependencies
 			? Object.keys(defaults)?.reduce(
 					(prev, curr) => ({
 						...prev,
-						[curr]: dependencies[curr]
-							? dependencies[curr].data?.find(
-									d => d[dependencies[curr].displayValue] === defaults[curr],
-							  )?.id
-							: defaults[curr],
+						[curr]: dependencies[curr]?.data?.find(
+							d => d[dependencies[curr]?.displayValue] === defaults[curr]
+						)?.id ?? defaults[curr],
 					}),
 					{},
 			  )
 			: defaults;
 
 		setValues(transformedValues);
-	}, [data]);
+	}, [data, schema, dependencies]);
+
+	const handleChange = (name, value) => {
+		setValues(prev => ({
+			...prev,
+			[name]: value
+		}));
+	};
+
+	const renderField = (col) => {
+		// Handle select fields (both from type and dependencies)
+		if ((col.type?.toLowerCase() === 'select' || dependencies?.[col.column_name]) && dependencies?.[col.column_name]?.data) {
+			return (
+				<FormControl fullWidth margin="normal">
+					<InputLabel>{translate(col.column_name)}</InputLabel>
+					<MuiSelect
+						value={values[col.column_name] || ''}
+						onChange={(e) => handleChange(col.column_name, e.target.value)}
+						label={translate(col.column_name)}
+						disabled={disabled}
+					>
+						{dependencies[col.column_name].data.map(option => (
+							<MenuItem 
+								key={option.id} 
+								value={option.id}
+							>
+								{option[dependencies[col.column_name].displayValue]}
+							</MenuItem>
+						))}
+					</MuiSelect>
+				</FormControl>
+			);
+		}
+
+		// Handle other field types
+		switch (col.type?.toLowerCase()) {
+			case 'text':
+				return (
+					<TextField
+						fullWidth
+						margin="normal"
+						label={translate(col.column_name)}
+						value={values[col.column_name] || ''}
+						onChange={(e) => handleChange(col.column_name, e.target.value)}
+						disabled={col.column_name === 'id' || disabled}
+						multiline
+						rows={4}
+					/>
+				);
+			case 'date':
+				return (
+					<TextField
+						fullWidth
+						margin="normal"
+						type="date"
+						label={translate(col.column_name)}
+						value={values[col.column_name] || ''}
+						onChange={(e) => handleChange(col.column_name, e.target.value)}
+						disabled={disabled}
+						InputLabelProps={{ shrink: true }}
+					/>
+				);
+			case 'password':
+				return (
+					<TextField
+						fullWidth
+						margin="normal"
+						type="password"
+						label={translate(col.column_name)}
+						value={values[col.column_name] || ''}
+						onChange={(e) => handleChange(col.column_name, e.target.value)}
+						disabled={disabled}
+					/>
+				);
+			default:
+				return (
+					<TextField
+						fullWidth
+						margin="normal"
+						label={translate(col.column_name)}
+						value={values[col.column_name] || ''}
+						onChange={(e) => handleChange(col.column_name, e.target.value)}
+						disabled={col.column_name === 'id' || disabled}
+					/>
+				);
+		}
+	};
 
 	return (
-		<div id='form' onSubmit={() => false}>
-			{schema?.map(col => (
-				<div className='form-field' key={col.column_name}>
-					<label>{translate(col.column_name)}</label>
-					{dependencies && dependencies[col?.column_name] ? (
-						<Select
-							disabled={disabled}
-							options={
-								dependencies[col?.column_name]?.data.map(v => ({
-									...v,
-									text: v[dependencies[col?.column_name].displayValue],
-								})) ?? []
-							}
-							onSelect={value => {
-								setValues({ ...values, [col.column_name]: value });
+		<Box 
+			component="form" 
+			sx={{ 
+				display: 'flex',
+				flexDirection: 'column',
+				gap: 1,
+				p: 2,
+				bgcolor: 'background.paper',
+				borderRadius: 2,
+				'& .MuiTextField-root': {
+					'& .MuiOutlinedInput-root': {
+						borderRadius: 2,
+					}
+				},
+				'& .MuiFormControl-root': {
+					'& .MuiOutlinedInput-root': {
+						borderRadius: 2,
+					}
+				}
+			}}
+		>
+			<Grid container spacing={2} sx={{ mb: 2 }}>
+				{schema?.map(col => (
+					<Grid 
+						item 
+						xs={12} 
+						sm={stackFields ? 12 : 6}
+						key={col.column_name}
+					>
+						{renderField(col)}
+					</Grid>
+				))}
+			</Grid>
+			
+			{!disabled && (
+				<Stack 
+					direction="row" 
+					spacing={2} 
+					justifyContent="flex-end"
+				>
+					{onCancel && (
+						<Button
+							variant="outlined"
+							onClick={() => onCancel(values)}
+							sx={{
+								borderRadius: 2,
+								textTransform: 'none',
+								px: 3
 							}}
-							value={values[col.column_name]}
-						/>
-					) : col.data_type === 'text' ? (
-						<TextArea
-							type='text'
-							disabled={col?.column_name === 'id' || disabled}
-							value={values[col.column_name]}
-							onChange={event =>
-								setValues({ ...values, [col.column_name]: event.target.value })
-							}
-						/>
-					) : col.data_type === 'date' ? (
-						<Input
-							disabled={disabled}
-							type='date'
-							value={values[col.column_name]}
-							onChange={event =>
-								setValues({ ...values, [col.column_name]: event.target.value })
-							}
-						/>
-					) : col.column_name === 'password' ? (
-						<Password
-							disabled={disabled}
-							value={values[col.column_name]}
-							onChange={event =>
-								setValues({ ...values, [col.column_name]: event.target.value })
-							}
-						/>
-					) : (
-						<Input
-							disabled={col?.column_name === 'id' || disabled}
-							value={values[col.column_name]}
-							onChange={event =>
-								setValues({ ...values, [col.column_name]: event.target.value })
-							}
-						/>
+						>
+							Cancelar
+						</Button>
 					)}
-				</div>
-			))}
-			<div className='form-actions'>
-				<button className='delete' onClick={() => onCancel(values)}>
-					Cancelar
-				</button>
-				<button className='primary' onClick={() => onSave(values)}>
-					Guardar
-				</button>
-			</div>
-		</div>
+					<Button
+						variant="contained"
+						onClick={() => onSave(values)}
+						sx={{
+							borderRadius: 2,
+							textTransform: 'none',
+							px: 3,
+							background: 'linear-gradient(45deg, #004A93 30%, #00B5E2 90%)',
+							'&:hover': {
+								background: 'linear-gradient(45deg, #003366 30%, #007d99 90%)',
+							}
+						}}
+					>
+						Guardar
+					</Button>
+				</Stack>
+			)}
+		</Box>
 	);
 };
 

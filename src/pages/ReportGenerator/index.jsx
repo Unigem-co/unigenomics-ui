@@ -1,13 +1,23 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { 
+	Box, 
+	AppBar, 
+	Toolbar, 
+	Typography, 
+	IconButton, 
+	Paper,
+	Grid,
+	Tooltip
+} from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { parseJwt } from '../../utils/jwt';
 import { fileRequest, request } from '../../utils/fetch';
-import { useState } from 'react';
 import Table from '../../components/Table';
-import './ReportGenerator.scss';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from '../../components/Snackbar/context';
 import AcceptModal from '../../components/Modal/AcceptModal';
 import Loading from '../../components/Loading';
+import PageContainer from '../../components/PageContainer';
 
 const ReportGenerator = () => {
 	const [reports, setReports] = useState([]);
@@ -19,6 +29,7 @@ const ReportGenerator = () => {
 	const [loading, setLoading] = useState(false);
 
 	const onError = e => {
+		setLoading(false);
 		if (e.status === 403) {
 			setSnackbar({
 				show: true,
@@ -35,21 +46,25 @@ const ReportGenerator = () => {
 		}
 		setLoading(false);
 	};
+
 	useEffect(() => {
-		setLoading(true);
-		const jwt = window.localStorage.getItem('token');
-		const user = parseJwt(jwt);
-		if (user) {
-			request(
-				`report/userReports/${user.id}`,
-				{ method: 'GET' },
-				data => { 
+		const fetchReports = async () => {
+			setLoading(true);
+			try {
+				const jwt = window.localStorage.getItem('token');
+				const user = parseJwt(jwt);
+				if (user) {
+					const data = await request(`report/userReports/${user.id}`, { method: 'GET' });
 					setReports(data);
-					setLoading(false);
-				},
-				onError,
-			);
-		}
+				}
+			} catch (error) {
+				onError(error);
+			} finally {
+				setLoading(false);
+			}
+		};
+		
+		fetchReports();
 	}, []);
 
 	const onGenerateReport = report => {
@@ -79,61 +94,98 @@ const ReportGenerator = () => {
 	};
 
 	return (
-		<div className='user-report'>
-			{loading && <Loading />}
-			<header className='header'>
-				<div className='unigem-logo'>
+		<Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+			<AppBar position="static" color="transparent" elevation={0}>
+				<Toolbar sx={{ justifyContent: 'space-between' }}>
+					<Box sx={{ height: 60 }}>
 					<img
 						src='https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png'
 						alt='unigem-logo'
+							style={{ height: '100%' }}
 					/>
-				</div>
-				<div>
-					<div className='sign-out'>
-						<button
-							className='delete'
+					</Box>
+					<Tooltip title="Cerrar sesión">
+						<IconButton 
+							color="primary" 
 							onClick={() => setShowModal(true)}
-							title='Cerrar sesión'
 						>
-							<i className='bi bi-box-arrow-left'></i>
-						</button>
-					</div>
-				</div>
-			</header>
-			<div className='report-generator'>
-				<div className='reports'>
-					<h3>Reportes</h3>
-					<p>
+							<LogoutIcon />
+						</IconButton>
+					</Tooltip>
+				</Toolbar>
+			</AppBar>
+
+			<PageContainer>
+				<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+					{loading && <Loading />}
+					<Grid container spacing={3} sx={{ flex: 1, height: '100%' }}>
+						<Grid item xs={12} md={reportGenerated ? 4 : 12}>
+							<Paper 
+								elevation={0} 
+								sx={{ 
+									p: 3, 
+									height: '100%',
+									display: 'flex',
+									flexDirection: 'column',
+									gap: 2
+								}}
+							>
+								<Typography variant="h5" gutterBottom>
+									Reportes
+								</Typography>
+								<Typography variant="body2" color="text.secondary" paragraph>
 						Puedes escoger que reporte deseas generar dando click en las opciones de
 						abajo. Un PDF aparecerá a la derecha cuando la generación del mismo termine.
-					</p>
+								</Typography>
+								<Box sx={{ flex: 1 }}>
 					<Table
 						data={reports}
 						columns={Object.keys(reports[0] || {})
 							?.map(key => ({ column_name: key }))
 							.filter(column => column.column_name !== 'id')}
 						onUpdate={onGenerateReport}
-						onUpdateText={<i className='bi bi-eye'></i>}
+										onUpdateText="Ver reporte"
 						onUpdateTooltip='Ver reporte'
 					/>
-				</div>
+								</Box>
+							</Paper>
+						</Grid>
 				{reportGenerated && (
-					<div className='generated-report'>
-						<embed src={fileUrl} className='embedded-pdf' />
-					</div>
+							<Grid item xs={12} md={8}>
+								<Paper 
+									elevation={0} 
+									sx={{ 
+										height: '100%',
+										minHeight: 600,
+										overflow: 'hidden'
+									}}
+								>
+									<embed 
+										src={fileUrl} 
+										style={{
+											width: '100%',
+											height: '100%',
+											border: 'none'
+										}}
+									/>
+								</Paper>
+							</Grid>
 				)}
-			</div>
+					</Grid>
+				</Box>
+			</PageContainer>
+
 			{showModal && (
 				<AcceptModal
 					title='Salir'
-					message='Deseas cerrar la sesión?'
+					message='¿Deseas cerrar la sesión?'
 					onAccept={logout}
 					onReject={() => {
 						setShowModal(false);
 					}}
 				/>
 			)}
-		</div>
+		</Box>
 	);
 };
 

@@ -6,14 +6,15 @@
     padding: 0 5px;
     border-radius: 5px;
     column-gap: 5px;
+    margin: 5px;
     input {
         border: none;
         text-decoration: none;
         flex: 1;
+        min-width: 0;
         &:focus-visible {
             outline: none;
         }
-        width: 100%;
     }
     i {
         display: flex;

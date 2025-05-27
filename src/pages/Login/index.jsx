@@ -15,27 +15,25 @@ const Login = () => {
 
     const login = async () => {
 		setIsLoading(true);
-        await request(
-			'users/login',
-			{ method: 'POST', body: user },
-			({ token }) => {
-				window.localStorage.setItem('token', token);
-                navigate('/', { replace: true });
-				setSnackbar({
-					show: true,
-					message: 'Inicio de sessión exitoso',
-					className: 'success',
-				});
-			},
-			error => {
-				setSnackbar({
-					show: true,
-					message: 'Usuario o contraseña invalidos',
-					className: 'error',
-				});
-			},
-		);     
-		setIsLoading(false);   
+        try {
+            const response = await request('users/login', { method: 'POST', body: user });
+            const { token } = response;
+            window.localStorage.setItem('token', token);
+            navigate('/', { replace: true });
+            setSnackbar({
+                show: true,
+                message: 'Inicio de sessión exitoso',
+                className: 'success',
+            });
+        } catch (error) {
+            setSnackbar({
+                show: true,
+                message: 'Usuario o contraseña invalidos',
+                className: 'error',
+            });
+        } finally {
+            setIsLoading(false);
+        }
     }
 	return (
 		<div className='login-container'>

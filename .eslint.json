@@ -1,0 +1,16 @@
+{
+    "extends": ["airbnb", "airbnb/hooks"],
+    "plugins": ["react", "react-hooks", "jsx-a11y"],
+    "env": {
+      "browser": true,
+      "es2021": true
+    },
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      },
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "rules": {}
+  }

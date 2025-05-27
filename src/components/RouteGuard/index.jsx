@@ -7,7 +7,7 @@ const RouteGuard = ({outlet}) => {
     const isValidJwt = !isJwtExpired(token); 
     const user = parseJwt(token);
     if (!isValidJwt) {
-        window.localStorage.removeItem('jwt');
+        window.localStorage.removeItem('token');
         return <Navigate to='/login' replace />;
 	}
 

@@ -11,6 +11,7 @@
     border-radius: 5px;
     min-width: 100px;
     height: 35px;
+    padding: 5px;
 
     &.disabled {
         cursor: not-allowed;
@@ -40,17 +41,21 @@
         background-color: white;
         display: flex;
         flex-direction: column;
-        position: absolute;
-        top: 31px;
-        left: 0;
+        position: fixed;
         border-radius: 5px;
-        width: 100%;
-        border: 1px solid black;
-        z-index: 1;
+        border: 2px solid red; /* Temporary debug border */
+        z-index: 99999;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         
         .select-option {
-            padding: 0 5px;
+            padding: 8px 10px;
             color: black;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             &:hover {
                 background-color: rgba($color: $unigem-green, $alpha: 1);
                 color: white;

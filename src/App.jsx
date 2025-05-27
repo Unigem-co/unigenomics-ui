@@ -1,38 +1,22 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Layout from './pages/Layout';
-import Genotypes from './pages/Genotypes';
-import GenotypesEffects from './pages/GenotypesEffects';
-import Interpretations from './pages/Interpretations';
-import Snps from './pages/Snps';
-import Report from './pages/Report';
-import Login from './pages/Login';
-import RouteGuard from './components/RouteGuard';
-import { SnackbarProbider } from './components/Snackbar/context';
-import Users from './pages/Users';
-import ReportGenerator from './pages/ReportGenerator';
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { SnackbarProvider } from './components/Snackbar/context';
+import theme from './theme';
+import Routes from './routes';
 
-const App = () => {
+function App() {
 	return (
-		<SnackbarProbider>
+		<ThemeProvider theme={theme}>
+			<CssBaseline />
+			<SnackbarProvider>
 			<BrowserRouter>
-				<Routes>
-					<Route path='/login' element={<Login />} />
-					<Route path='/' element={<RouteGuard outlet={<Layout />} />}>
-						<Route path='/create-report' element={<Report />} />
-						<Route path='/users' element={<Users />} />
-						<Route path='/genotypes' element={<Genotypes />} />
-						<Route path='/genotypes-effects' element={<GenotypesEffects />} />
-						<Route path='/interpretations' element={<Interpretations />} />
-						<Route path='/snps' element={<Snps />} />
-					</Route>
-					<Route
-						path='/user-report'
-						element={<ReportGenerator />}
-					/>
-				</Routes>
+					<Routes />
 			</BrowserRouter>
-		</SnackbarProbider>
+			</SnackbarProvider>
+		</ThemeProvider>
 	);
-};
+}
 
 export default App;

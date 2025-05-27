@@ -1,44 +1,45 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import Snackbar from '../Snackbar';
+import React, { createContext, useContext, useState } from 'react';
+import { Snackbar, Alert } from '@mui/material';
 
-const SnackbarContext = createContext({ snackbar: {}, setSnackbar: () => {} });
-const DEFAULT_TIME = 10000;
-const SnackbarProbider = ({ children }) => {
-	const [snackbar, setSnackbarState] = useState({
-		className: '',
+const SnackbarContext = createContext();
+
+export const useSnackbar = () => {
+	const context = useContext(SnackbarContext);
+	if (!context) {
+		throw new Error('useSnackbar must be used within a SnackbarProvider');
+	}
+	return context;
+};
+
+export const SnackbarProvider = ({ children }) => {
+	const [snackbar, setSnackbar] = useState({
+		show: false,
 		message: '',
-		time: DEFAULT_TIME,
+		className: 'success',
 	});
-	const [snackbarTimeout, setSnackbarTimeout] = useState(false);
 
-	const setSnackbar = snack => {
-		setSnackbarState({ time: 5000, ...snack });
+	const handleClose = () => {
+		setSnackbar((prev) => ({ ...prev, show: false }));
 	};
-
-	useEffect(() => {
-		if (snackbar.show) {
-			setSnackbarTimeout(
-				setTimeout(() => {
-					setSnackbar({ ...snackbar, show: false, message: '', time: DEFAULT_TIME });
-				}, snackbar.time),
-			);
-		}
-
-		return () => clearTimeout(snackbarTimeout);
-	}, [snackbar.show, snackbar.message]);
 
 	return (
 		<SnackbarContext.Provider value={[snackbar, setSnackbar]}>
-			<>
 				{children}
 				<Snackbar
-					className={snackbar.className}
-					message={snackbar.message}
-					show={snackbar.show}
-				/>
-			</>
+				open={snackbar.show}
+				autoHideDuration={4000}
+				onClose={handleClose}
+				anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+				sx={{ zIndex: 9999 }}
+			>
+				<Alert
+					onClose={handleClose}
+					severity={snackbar.className}
+					sx={{ width: '100%' }}
+				>
+					{snackbar.message}
+				</Alert>
+			</Snackbar>
 		</SnackbarContext.Provider>
 	);
 };
-const useSnackbar = () => useContext(SnackbarContext);
-export { SnackbarProbider, useSnackbar };
