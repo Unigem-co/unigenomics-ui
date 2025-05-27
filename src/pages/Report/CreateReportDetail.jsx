@@ -9,6 +9,7 @@ import AcceptModal from '../../components/Modal/AcceptModal';
 import SearchInput from '../../components/SearchInput';
 import TextArea from '../../components/TextArea';
 import { Box, Grid, Typography, Paper, CircularProgress, FormControl, InputLabel, MenuItem, LinearProgress, Button, Select as MuiSelect } from '@mui/material';
+import { translate } from '../../utils/translations';
 
 const date = new Date();
 const year = date.getFullYear();
@@ -85,13 +86,13 @@ const CreateReportDetail = props => {
 		if (response.status === 403) {
 			setSnackbar({
 				show: true,
-				message: 'Tu sesión ha finalizado, intenta volver a iniciar sesión',
+				message: translate('session_expired'),
 				className: 'error',
 			});
 		} else {
 			setSnackbar({
 				show: true,
-				message: 'Ocurrió un error, intentalo más tarde',
+				message: translate('generic_error'),
 				className: 'error',
 			});
 		}
@@ -139,7 +140,7 @@ const CreateReportDetail = props => {
 				() => {
 					setSnackbar({
 						show: true,
-						message: 'Reporte actualizado exitosamente',
+						message: translate('report_updated'),
 						className: 'success',
 					});
 					onReportCreated();
@@ -163,7 +164,7 @@ const CreateReportDetail = props => {
 				() => {
 					setSnackbar({
 						show: true,
-						message: 'Reporte creado exitosamente',
+						message: translate('report_created'),
 						className: 'success',
 					});
 					onReportCreated();
@@ -243,7 +244,7 @@ const CreateReportDetail = props => {
 
 					{/* Header Section */}
 					<Typography variant="h4" sx={{ textAlign: 'center', color: 'black' }}>
-						{selectedReport?.id ? 'Editar Reporte' : 'Crear Reporte'}
+						{selectedReport?.id ? translate('edit_report') : translate('create_report')}
 					</Typography>
 
 					{/* Dates and Observations */}
@@ -251,34 +252,39 @@ const CreateReportDetail = props => {
 						<Grid container spacing={2}>
 							<Grid item xs={12} md={6}>
 								<Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5, color: 'black' }}>
-									Fecha de Reporte
+									{translate('report_date')}
 								</Typography>
 								<Input
 									type='date'
 									value={reportDate}
 									onChange={event => setReportDate(event.target.value)}
+									placeholder={translate('report_date_label')}
+									aria-label={translate('report_date_label')}
 								/>
 							</Grid>
 							<Grid item xs={12} md={6}>
 								<Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5, color: 'black' }}>
-									Toma de muestra
+									{translate('sampling_date')}
 								</Typography>
 								<Input
 									type='date'
 									value={samplingDate}
 									onChange={event => setSamplingDate(event.target.value)}
+									placeholder={translate('sampling_date_label')}
+									aria-label={translate('sampling_date_label')}
 								/>
 							</Grid>
 						</Grid>
 
 						<Box>
 							<Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5, color: 'black' }}>
-								Observaciones
+								{translate('observations')}
 							</Typography>
 							<TextArea
 								value={observations}
 								onChange={event => setObservations(event.target.value)}
-								placeholder="Ingrese observaciones adicionales..."
+								placeholder={translate('observations_label')}
+								aria-label={translate('observations_label')}
 							/>
 						</Box>
 					</Box>
@@ -307,7 +313,7 @@ const CreateReportDetail = props => {
 							<SearchInput 
 								value={searchValue}
 								onChange={(e) => setSearchValue(e.target.value)}
-								placeholder='Buscar RS'
+								placeholder={translate('search_rs')}
 								fullWidth
 								size="small"
 							/>
@@ -357,12 +363,12 @@ const CreateReportDetail = props => {
 										
 										<FormControl fullWidth>
 											<InputLabel sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
-												Seleccionar genotipo
+												{translate('select_genotype')}
 											</InputLabel>
 											<MuiSelect
 												value={localData[r.id]?.genotype || ''}
 												onChange={(event) => onGenotypeSelected(event.target.value, r)}
-												label="Seleccionar genotipo"
+												label={translate('select_genotype')}
 												MenuProps={{
 													PaperProps: {
 														sx: {
@@ -393,7 +399,7 @@ const CreateReportDetail = props => {
 													))
 												) : (
 													<MenuItem disabled>
-														No hay genotipos disponibles
+														{translate('no_genotypes')}
 													</MenuItem>
 												)}
 											</MuiSelect>
@@ -415,7 +421,7 @@ const CreateReportDetail = props => {
 															mb: 1,
 															color: 'rgba(0, 0, 0, 0.6)'
 														}}>
-															Cargando interpretación...
+															{translate('loading_interpretation')}
 														</Typography>
 														<LinearProgress 
 															sx={{ 
@@ -433,10 +439,10 @@ const CreateReportDetail = props => {
 															mb: 1,
 															color: 'black'
 														}}>
-															Interpretación:
+															{translate('interpretation')}:
 														</Typography>
 														<Typography sx={{ color: 'black' }}>
-															{interpretations[r.id] || 'No hay interpretación disponible'}
+															{interpretations[r.id] || translate('no_interpretation')}
 														</Typography>
 													</>
 												)}
@@ -452,7 +458,7 @@ const CreateReportDetail = props => {
 									color: 'rgba(0, 0, 0, 0.6)'
 								}}>
 									<Typography>
-										{searchValue ? 'No se encontraron RS que coincidan con la búsqueda' : 'No hay RS disponibles'}
+										{searchValue ? translate('no_rs_found') : translate('no_rs_available')}
 									</Typography>
 								</Box>
 							)}
@@ -473,7 +479,7 @@ const CreateReportDetail = props => {
 							color="error"
 							onClick={() => setShowModal(true)}
 						>
-							Cancelar
+							{translate('cancel')}
 						</Button>
 						<Button
 							variant="contained"
@@ -486,7 +492,7 @@ const CreateReportDetail = props => {
 								}
 							}}
 						>
-							{isLoading ? 'Guardando...' : 'Guardar'}
+							{isLoading ? translate('saving') : translate('save')}
 						</Button>
 					</Box>
 				</Box>
@@ -495,8 +501,8 @@ const CreateReportDetail = props => {
 			{/* Render AcceptModal outside the main container */}
 			{showModal && (
 				<AcceptModal
-					title={selectedReport?.id ? 'Cancelar edición' : 'Cancelar creación'}
-					message={selectedReport?.id ? '¿Deseas salir sin guardar los cambios de la edición?' : '¿Deseas salir sin guardar el nuevo reporte?'}
+					title={selectedReport?.id ? translate('cancel_edit') : translate('cancel_create')}
+					message={selectedReport?.id ? translate('cancel_edit_message') : translate('cancel_create_message')}
 					onAccept={onCancel}
 					onReject={() => {
 						setShowModal(false);

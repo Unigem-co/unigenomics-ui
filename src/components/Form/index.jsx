@@ -59,7 +59,7 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 		// Handle select fields (both from type and dependencies)
 		if ((col.type?.toLowerCase() === 'select' || dependencies?.[col.column_name]) && dependencies?.[col.column_name]?.data) {
 			return (
-				<FormControl fullWidth margin="normal">
+				<FormControl fullWidth margin="normal" variant="outlined">
 					<InputLabel>{translate(col.column_name)}</InputLabel>
 					<MuiSelect
 						value={values[col.column_name] || ''}
@@ -67,6 +67,9 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 						label={translate(col.column_name)}
 						disabled={disabled}
 					>
+						<MenuItem value="">
+							<em>{translate('select_option')}</em>
+						</MenuItem>
 						{dependencies[col.column_name].data.map(option => (
 							<MenuItem 
 								key={option.id} 
@@ -81,16 +84,21 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 		}
 
 		// Handle other field types
+		const commonProps = {
+			fullWidth: true,
+			margin: "normal",
+			variant: "outlined",
+			label: translate(col.column_name),
+			value: values[col.column_name] || '',
+			onChange: (e) => handleChange(col.column_name, e.target.value),
+			disabled: col.column_name === 'id' || disabled
+		};
+
 		switch (col.type?.toLowerCase()) {
 			case 'text':
 				return (
 					<TextField
-						fullWidth
-						margin="normal"
-						label={translate(col.column_name)}
-						value={values[col.column_name] || ''}
-						onChange={(e) => handleChange(col.column_name, e.target.value)}
-						disabled={col.column_name === 'id' || disabled}
+						{...commonProps}
 						multiline
 						rows={4}
 					/>
@@ -98,37 +106,25 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 			case 'date':
 				return (
 					<TextField
-						fullWidth
-						margin="normal"
+						{...commonProps}
 						type="date"
-						label={translate(col.column_name)}
-						value={values[col.column_name] || ''}
-						onChange={(e) => handleChange(col.column_name, e.target.value)}
-						disabled={disabled}
-						InputLabelProps={{ shrink: true }}
+						value={values[col.column_name] ? values[col.column_name].split('T')[0] : ''}
+						InputLabelProps={{
+							shrink: true
+						}}
 					/>
 				);
 			case 'password':
 				return (
 					<TextField
-						fullWidth
-						margin="normal"
+						{...commonProps}
 						type="password"
-						label={translate(col.column_name)}
-						value={values[col.column_name] || ''}
-						onChange={(e) => handleChange(col.column_name, e.target.value)}
-						disabled={disabled}
 					/>
 				);
 			default:
 				return (
 					<TextField
-						fullWidth
-						margin="normal"
-						label={translate(col.column_name)}
-						value={values[col.column_name] || ''}
-						onChange={(e) => handleChange(col.column_name, e.target.value)}
-						disabled={col.column_name === 'id' || disabled}
+						{...commonProps}
 					/>
 				);
 		}
@@ -160,8 +156,7 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 				{schema?.map(col => (
 					<Grid 
 						item 
-						xs={12} 
-						sm={stackFields ? 12 : 6}
+						xs={12}
 						key={col.column_name}
 					>
 						{renderField(col)}
@@ -185,7 +180,7 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 								px: 3
 							}}
 						>
-							Cancelar
+							{translate('cancel')}
 						</Button>
 					)}
 					<Button
@@ -201,7 +196,7 @@ const Form = ({ schema, data, dependencies = {}, onSave, onCancel, disabled, sta
 							}
 						}}
 					>
-						Guardar
+						{translate('save')}
 					</Button>
 				</Stack>
 			)}

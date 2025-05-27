@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PageContainer from '../../components/PageContainer';
+import { translate } from '../../utils/translations';
 
 const USERS = 'users/user';
 const REPORTS = 'report';
@@ -63,7 +64,7 @@ const Report = () => {
 		setLoading(false);
 		setSnackbar({
 			show: true,
-			message: 'Error cargando datos. Por favor, intente más tarde.',
+			message: translate('error_loading_data'),
 			className: 'error',
 		});
 	}
@@ -149,7 +150,7 @@ const Report = () => {
 			});
 			setSnackbar({
 				show: true,
-				message: 'Reporte eliminado',
+				message: translate('report_deleted'),
 				className: 'success',
 			});
 			
@@ -215,7 +216,7 @@ const Report = () => {
 					console.error('Error processing PDF:', error);
 					setSnackbar({
 						show: true,
-						message: 'Error al procesar el PDF. Por favor, intente nuevamente.',
+						message: translate('error_processing_pdf'),
 						className: 'error'
 					});
 					setLoading(false);
@@ -226,7 +227,7 @@ const Report = () => {
 				console.error('Error generating report:', error);
 				setSnackbar({
 					show: true,
-					message: 'Error al generar el reporte. Por favor, intente nuevamente.',
+					message: translate('error_generating_report'),
 					className: 'error'
 				});
 				setLoading(false);
@@ -282,21 +283,21 @@ const Report = () => {
 				{/* Client Selection and Information Section */}
 				<Paper elevation={2} sx={{ p: 3, mb: 3, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 					<Typography variant="h6" sx={{ mb: 3 }}>
-						Crear Reporte
+						{translate('create_report')}
 					</Typography>
 					
 					{/* Client Dropdown */}
 					<Box sx={{ mb: 3 }}>
 						<Typography variant="subtitle1" sx={{ mb: 2 }}>
-							Selecciona el cliente:
+							{translate('select_client')}:
 						</Typography>
 						<FormControl fullWidth sx={{ maxWidth: 400 }}>
-							<InputLabel id="user-select-label">Cliente</InputLabel>
+							<InputLabel id="user-select-label">{translate('select_client')}</InputLabel>
 							<MuiSelect
 								labelId="user-select-label"
 								id="user-select"
 								value={selectedUser}
-								label="Cliente"
+								label={translate('select_client')}
 								onChange={onUserSelected}
 								sx={{ 
 									'& .MuiOutlinedInput-notchedOutline': {
@@ -314,7 +315,7 @@ const Report = () => {
 										</MenuItem>
 									))
 								) : (
-									<MenuItem disabled>No hay clientes disponibles</MenuItem>
+									<MenuItem disabled>{translate('no_clients_available')}</MenuItem>
 								)}
 							</MuiSelect>
 						</FormControl>
@@ -336,7 +337,7 @@ const Report = () => {
 								flexDirection: 'column'
 							}}>
 								<Typography variant="h6" sx={{ mb: 2 }}>
-									Información del Cliente
+									{translate('client_information')}
 								</Typography>
 								<Paper 
 									variant="outlined"
@@ -388,7 +389,7 @@ const Report = () => {
 											boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
 										}}
 									>
-										Crear Nuevo Reporte
+										{translate('create_new_report')}
 									</Button>
 								</Box>
 							</Box>
@@ -400,7 +401,7 @@ const Report = () => {
 								flexDirection: 'column'
 							}}>
 								<Typography variant="h6" sx={{ mb: 2 }}>
-									Reportes Disponibles
+									{translate('available_reports')}
 								</Typography>
 								<Paper 
 									variant="outlined"
@@ -429,7 +430,10 @@ const Report = () => {
 										<Table
 											data={reports}
 											columns={Object.keys(reports[0]).map(key =>
-												key === 'observations' ? {} : { column_name: key },
+												key === 'observations' ? {} : { 
+													column_name: key,
+													display_name: translate(key)
+												},
 											)}
 											onUpdate={value => {
 												setSelectedReport(value);
@@ -442,7 +446,7 @@ const Report = () => {
 											}}
 											extraOptions={[
 												{
-													title: 'Generar',
+													title: translate('generate_report'),
 													onClick: onGenerateReport,
 													icon: 'bi bi-eye',
 												},
@@ -457,7 +461,7 @@ const Report = () => {
 											color: 'text.secondary'
 										}}>
 											<Typography>
-												No hay reportes disponibles para este cliente
+												{translate('no_reports_available')}
 											</Typography>
 										</Box>
 									)}
@@ -606,8 +610,8 @@ const Report = () => {
 
 			{showModal && (
 				<AcceptModal
-					title='Eliminar'
-						message='¿Deseas eliminar este reporte?'
+					title={translate('delete_report')}
+					message={translate('delete_report_confirm')}
 					onAccept={onDelete}
 					onReject={() => {
 						setShowModal(false);
