@@ -20,6 +20,7 @@ export const request = async (endpoint, options = {}, onSuccess, onError) => {
 
   const config = {
     method: options.method || 'GET',
+    credentials: 'include', // Include cookies in requests
     ...options,
     headers: {
       ...defaultHeaders,
@@ -59,8 +60,8 @@ export const request = async (endpoint, options = {}, onSuccess, onError) => {
         errorData = { message: response.statusText || 'Error de red' };
       }
 
-      if (response.status === 401 || response.status === 403) {
-        // Handle unauthorized/forbidden access
+      // Only redirect to login for non-login requests
+      if ((response.status === 401 || response.status === 403) && !endpoint.includes('login')) {
         localStorage.removeItem('token');
         window.location.href = '/login';
         throw new Error('Sesión expirada o acceso denegado');
