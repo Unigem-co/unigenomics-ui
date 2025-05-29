@@ -1,13 +1,20 @@
 @import '../../variables.scss';
 
 .login-container {
-    padding: 5px;
+    min-height: 100vh;
     display: flex;
-    align-items: center ;
+    align-items: center;
     justify-content: center;
-    column-gap: 10px;
-    height: 100%;
     background-image: url('https://unigem.co/wp-content/uploads/revslider/slide1/Objeto-inteligente-vectorial-copia-21.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 16px;
+
+    img[alt='unigem-logo'] {
+        filter: brightness(0) saturate(100%) invert(19%) sepia(96%) saturate(2252%) hue-rotate(201deg) brightness(94%) contrast(106%) !important;
+        -webkit-filter: brightness(0) saturate(100%) invert(19%) sepia(96%) saturate(2252%) hue-rotate(201deg) brightness(94%) contrast(106%) !important;
+    }
 
     .login-form {
         background-color: $black-background;

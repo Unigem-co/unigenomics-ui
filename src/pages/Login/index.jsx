@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
-import Input from '../../components/Input';
-import './Login.scss';
-import { request } from '../../utils/fetch';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from '../../components/Snackbar/context';
 import Loading from '../../components/Loading';
+import { 
+    Box,
+    Card,
+    CardContent,
+    TextField,
+    Button,
+    IconButton,
+    InputAdornment,
+    Typography,
+    Container
+} from '@mui/material';
+import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
+import { request } from '../../utils/fetch';
+import './Login.scss';
+import unigemLogo from '../../assets/images/unigem.svg';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -14,7 +26,7 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent form submission
+        e.preventDefault();
         if (!user.username || !user.password) {
             setSnackbar({
                 show: true,
@@ -57,57 +69,106 @@ const Login = () => {
         }
     };
 
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleSubmit(e);
-        }
-    };
-
     return (
-        <div className='login-container'>
+        <Box className="login-container">
             {isLoading && <Loading />}
-            <form className='login-form' onSubmit={handleSubmit}>
-                <div className='form-icon'>
-                    <img
-                        src='https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png'
-                        alt='unigem-logo'
-                    />
-                </div>
-                <div className='form-field'>
-                    <label>Usuario</label>
-                    <Input
-                        value={user.username}
-                        onChange={event => setUser({ ...user, username: event.target.value })}
-                        placeholder='documento de identidad'
-                        onKeyPress={handleKeyPress}
-                        required
-                    />
-                </div>
-                <div className='form-field password'>
-                    <label>Contraseña</label>
-                    <Input
-                        type={showPassword ? 'text' : 'password'}
-                        value={user.password}
-                        onChange={event => setUser({ ...user, password: event.target.value })}
-                        onKeyPress={handleKeyPress}
-                        required
-                    />
-                    <button 
-                        type="button"
-                        className='transparent' 
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        <i className={`bi bi-eye${showPassword ? '' : '-slash'}`} />
-                    </button>
-                </div>
+            <Container maxWidth="sm">
+                <Card elevation={8} sx={{ 
+                    p: 3,
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)'
+                }}>
+                    <CardContent>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 3
+                        }}>
+                            <Box sx={{ width: '80%', maxWidth: 300 }}>
+                                <img
+                                    src="https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png"
+                                    alt='unigem-logo'
+                                    style={{ 
+                                        width: '100%', 
+                                        height: 'auto',
+                                        filter: 'brightness(0) saturate(100%) invert(19%) sepia(96%) saturate(2252%) hue-rotate(201deg) brightness(94%) contrast(106%)',
+                                        WebkitFilter: 'brightness(0) saturate(100%) invert(19%) sepia(96%) saturate(2252%) hue-rotate(201deg) brightness(94%) contrast(106%)'
+                                    }}
+                                />
+                            </Box>
+                            
+                            <Typography variant="h5" component="h1" color="primary" textAlign="center">
+                                Iniciar Sesión
+                            </Typography>
 
-                <div className='form-options'>
-                    <button type="submit" className='primary'>
-                        Iniciar sesión
-                    </button>
-                </div>
-            </form>
-        </div>
+                            <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 1 }}>
+                                <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    label="Usuario"
+                                    placeholder="Documento de identidad"
+                                    value={user.username}
+                                    onChange={(e) => setUser({ ...user, username: e.target.value })}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Person color="primary" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    required
+                                    sx={{
+                                        '& .MuiInputBase-input:-webkit-autofill': {
+                                            WebkitBoxShadow: '0 0 0 1000px white inset',
+                                            WebkitTextFillColor: 'inherit'
+                                        }
+                                    }}
+                                />
+
+                                <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    label="Contraseña"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={user.password}
+                                    onChange={(e) => setUser({ ...user, password: e.target.value })}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    required
+                                    sx={{
+                                        '& .MuiInputBase-input:-webkit-autofill': {
+                                            WebkitBoxShadow: '0 0 0 1000px white inset',
+                                            WebkitTextFillColor: 'inherit'
+                                        }
+                                    }}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    fullWidth
+                                    variant="contained"
+                                    size="large"
+                                    sx={{ mt: 3, mb: 2 }}
+                                >
+                                    Iniciar sesión
+                                </Button>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
+            </Container>
+        </Box>
     );
 };
 

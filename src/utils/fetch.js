@@ -15,12 +15,13 @@ export const request = async (endpoint, options = {}, onSuccess, onError) => {
   
   const defaultHeaders = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 
   const config = {
     method: options.method || 'GET',
-    credentials: 'include', // Include cookies in requests
+    credentials: 'include',
     ...options,
     headers: {
       ...defaultHeaders,
