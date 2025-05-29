@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useSnackbar } from '../components/Snackbar/context';
+import { translate } from '../utils/translations';
 
 const useCrud = ({
   fetchData,
@@ -16,18 +17,18 @@ const useCrud = ({
   const [itemToDelete, setItemToDelete] = useState(null);
   const [, setSnackbar] = useSnackbar();
 
-  const showSuccess = useCallback((message) => {
+  const showSuccess = useCallback((messageKey) => {
     setSnackbar({
       show: true,
-      message,
+      message: translate(messageKey),
       className: 'success',
     });
   }, [setSnackbar]);
 
-  const showError = useCallback((message) => {
+  const showError = useCallback((messageKey) => {
     setSnackbar({
       show: true,
-      message,
+      message: translate(messageKey),
       className: 'error',
     });
   }, [setSnackbar]);
@@ -39,11 +40,11 @@ const useCrud = ({
       setData(result);
     } catch (error) {
       console.error('Error loading data:', error);
-      showError(`Error al obtener ${entityName}s`);
+      showError('error_loading_items');
     } finally {
       setIsLoading(false);
     }
-  }, [fetchData, entityName, showError]);
+  }, [fetchData, showError]);
 
   const handleCreate = useCallback(() => {
     setSelectedItem(null);
@@ -64,15 +65,15 @@ const useCrud = ({
     try {
       await deleteItem(itemToDelete.id);
       await loadData();
-      showSuccess(`${entityName} eliminado exitosamente`);
+      showSuccess('item_deleted_successfully');
     } catch (error) {
       console.error('Error deleting item:', error);
-      showError(`Error al eliminar ${entityName}`);
+      showError('error_deleting_item');
     } finally {
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
-  }, [deleteItem, itemToDelete, loadData, entityName, showSuccess, showError]);
+  }, [deleteItem, itemToDelete, loadData, showSuccess, showError]);
 
   const handleDeleteCancel = useCallback(() => {
     setShowDeleteModal(false);
@@ -88,12 +89,12 @@ const useCrud = ({
       }
       await loadData();
       setShowForm(false);
-      showSuccess(`${entityName} ${selectedItem ? 'actualizado' : 'creado'} exitosamente`);
+      showSuccess(selectedItem ? 'item_updated_successfully' : 'item_created_successfully');
     } catch (error) {
       console.error('Error submitting item:', error);
-      showError(`Error al ${selectedItem ? 'actualizar' : 'crear'} ${entityName}`);
+      showError(selectedItem ? 'error_updating_item' : 'error_creating_item');
     }
-  }, [selectedItem, updateItem, createItem, loadData, entityName, showSuccess, showError]);
+  }, [selectedItem, updateItem, createItem, loadData, showSuccess, showError]);
 
   const handleFormClose = useCallback(() => {
     setShowForm(false);

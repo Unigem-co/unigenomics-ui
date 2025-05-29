@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { request } from '../../utils/fetch';
-import Select from '../../components/Select';
 import './CreateReportDetail.scss';
 import { useSnackbar } from '../../components/Snackbar/context';
 import Input from '../../components/Input';
-import Loading from '../../components/Loading';
 import AcceptModal from '../../components/Modal/AcceptModal';
 import SearchInput from '../../components/SearchInput';
 import TextArea from '../../components/TextArea';
@@ -55,75 +53,32 @@ const CreateReportDetail = props => {
 			request(
 				`${REPORTS}/detailed/${selectedReport?.id}`,
 				{ method: 'GET' },
-				async data => {
+				data => {
 					try {
 						// Create initial data structure for all reference SNPs
 						const initialData = createInitialLocalData(referencesWithGenotypes);
 						
 						// Update with saved values and their interpretations
-						const newLocalData = data.reduce(
-							(prev, curr) => ({
-								...prev,
-								[curr.reference_snp]: {
-									genotype: curr.result,
-									genotype_name: curr.genotype_name
-								},
-							}),
-							initialData
-						);
+						const newLocalData = {};
+						const newInterpretations = {};
 
-						// Set initial interpretations as undefined to show loading state
-						const initialInterpretations = data.reduce(
-							(prev, curr) => ({
-								...prev,
-								[curr.reference_snp]: undefined,
-							}),
-							{},
-						);
-						setInterpretations(initialInterpretations);
-
-						// Fetch interpretations for all selected genotypes
-						const interpretationPromises = data.map(async (item) => {
-							if (item.result) {
-								try {
-									const response = await request(
-										`${INTERPRETATIONS}/findResultInterpretation/${item.reference_snp}/${item.result}`,
-										{ method: 'GET' }
-									);
-									return {
-										reference_snp: item.reference_snp,
-										interpretation: response.interpretation
-									};
-								} catch (error) {
-									console.error('Error fetching interpretation:', error);
-									return {
-										reference_snp: item.reference_snp,
-										interpretation: translate('error_loading_interpretation')
-									};
-								}
-							}
-							return null;
+						data.forEach(item => {
+							newLocalData[item.reference_snp] = {
+								genotype: item.result,
+								genotype_name: item.genotype_name
+							};
+							// Store the interpretation directly from the API response
+							newInterpretations[item.reference_snp] = item.interpretation || '';
 						});
 
-						const interpretationResults = await Promise.all(interpretationPromises);
-						
-						// Update interpretations state with fetched values
-						const newInterpretations = interpretationResults.reduce(
-							(prev, curr) => {
-								if (!curr) return prev;
-								return {
-									...prev,
-									[curr.reference_snp]: curr.interpretation,
-								};
-							},
-							{},
-						);
+						// Merge with initial data to ensure all reference SNPs are included
+						const finalLocalData = { ...initialData, ...newLocalData };
 
 						setReportDate(selectedReport.report_date);
 						setSamplingDate(selectedReport.sampling_date);
 						setObservations(selectedReport.observations ?? '');
 						setInterpretations(newInterpretations);
-						setLocalData(newLocalData);
+						setLocalData(finalLocalData);
 					} catch (error) {
 						console.error('Error processing report data:', error);
 						showSnackbarMessage('error', translate('error_loading_report'));
@@ -171,7 +126,7 @@ const CreateReportDetail = props => {
 	const onGenotypeSelected = (value, referenceSnp) => {
 		const rsId = referenceSnp.id;
 		
-		// Only fetch interpretation when selecting a new genotype (not when loading saved data)
+		// Only fetch interpretation when selecting a new genotype
 		setInterpretations(prev => ({
 			...prev,
 			[rsId]: undefined // Set to undefined to show loading state

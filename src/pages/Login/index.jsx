@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, Person } from '@mui/icons-material';
 import { request } from '../../utils/fetch';
+import { translate } from '../../utils/translations';
 import './Login.scss';
 import unigemLogo from '../../assets/images/unigem.svg';
 
@@ -30,7 +31,7 @@ const Login = () => {
         if (!user.username || !user.password) {
             setSnackbar({
                 show: true,
-                message: 'Por favor ingrese usuario y contraseña',
+                message: translate('please_enter_credentials'),
                 className: 'error',
             });
             return;
@@ -50,7 +51,7 @@ const Login = () => {
                 window.localStorage.setItem('token', response.token);
                 setSnackbar({
                     show: true,
-                    message: 'Inicio de sesión exitoso',
+                    message: translate('login_successful'),
                     className: 'success',
                 });
                 navigate('/', { replace: true });
@@ -61,7 +62,7 @@ const Login = () => {
             console.error('Login error:', error);
             setSnackbar({
                 show: true,
-                message: error.message || 'Usuario o contraseña inválidos',
+                message: translate(error.message ? 'server_error' : 'invalid_credentials'),
                 className: 'error',
             });
         } finally {
@@ -99,15 +100,15 @@ const Login = () => {
                             </Box>
                             
                             <Typography variant="h5" component="h1" color="primary" textAlign="center">
-                                Iniciar Sesión
+                                {translate('login')}
                             </Typography>
 
                             <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', mt: 1 }}>
                                 <TextField
                                     fullWidth
                                     margin="normal"
-                                    label="Usuario"
-                                    placeholder="Documento de identidad"
+                                    label={translate('username')}
+                                    placeholder={translate('id_document')}
                                     value={user.username}
                                     onChange={(e) => setUser({ ...user, username: e.target.value })}
                                     InputProps={{
@@ -129,7 +130,7 @@ const Login = () => {
                                 <TextField
                                     fullWidth
                                     margin="normal"
-                                    label="Contraseña"
+                                    label={translate('password')}
                                     type={showPassword ? 'text' : 'password'}
                                     value={user.password}
                                     onChange={(e) => setUser({ ...user, password: e.target.value })}
@@ -161,7 +162,7 @@ const Login = () => {
                                     size="large"
                                     sx={{ mt: 3, mb: 2 }}
                                 >
-                                    Iniciar sesión
+                                    {translate('login')}
                                 </Button>
                             </Box>
                         </Box>

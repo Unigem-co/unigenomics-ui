@@ -6,6 +6,7 @@ import ConfirmationModal from '../ConfirmationModal';
 import { useSnackbar } from '../Snackbar/context';
 import Loading from '../Loading';
 import PageContainer from '../PageContainer';
+import { translate } from '../../utils/translations';
 
 const DependentData = ({ 
 	data = [],
@@ -42,13 +43,13 @@ const DependentData = ({
 			setShowForm(false);
 			setSnackbar({
 				show: true,
-				message: value.id ? 'Registro actualizado' : 'Registro creado',
+				message: translate(value.id ? 'updated' : 'created'),
 				className: 'success',
 			});
 		} catch (error) {
 			setSnackbar({
 				show: true,
-				message: 'Ocurrió un error, intentalo más tarde',
+				message: translate('generic_error'),
 				className: 'error',
 			});
 		}
@@ -71,13 +72,13 @@ const DependentData = ({
 			setShowModal(false);
 			setSnackbar({
 				show: true,
-				message: 'Registro eliminado',
+				message: translate('deleted'),
 				className: 'success',
 			});
 		} catch (error) {
 			setSnackbar({
 				show: true,
-				message: 'Ocurrió un error, intentalo más tarde',
+				message: translate('generic_error'),
 				className: 'error',
 			});
 		}
@@ -120,8 +121,8 @@ const DependentData = ({
 
 				<ConfirmationModal
 					open={showModal}
-					title='Eliminar'
-					message='¿Deseas eliminar este registro?'
+					title={translate('delete')}
+					message={translate('delete_confirmation')}
 					onConfirm={handleDelete}
 					onCancel={() => setShowModal(false)}
 				/>

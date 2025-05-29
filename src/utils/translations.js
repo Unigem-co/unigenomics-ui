@@ -108,6 +108,7 @@ const translations = {
     // Client Management
     new_client: 'Nuevo Cliente',
     client_created: 'Cliente creado exitosamente',
+    client_updated: 'Cliente actualizado exitosamente',
     error_creating_client: 'Error al crear el cliente',
     search_client: 'Buscar por nombre o documento...',
     select_option: 'Seleccione una opción',
@@ -142,6 +143,22 @@ const translations = {
     report_id_required: 'ID del reporte es requerido',
     report_not_found: 'Reporte no encontrado',
     at_least_one_result: 'Debe incluir al menos un resultado',
+
+    // Login Messages
+    login: 'Iniciar Sesión',
+    username: 'Usuario',
+    id_document: 'Documento de Identidad',
+    login_successful: 'Inicio de sesión exitoso',
+    invalid_credentials: 'Credenciales inválidas',
+    please_enter_credentials: 'Por favor ingrese sus credenciales',
+    server_error: 'Error del servidor',
+
+    // Common Messages
+    deleted: 'Registro eliminado exitosamente',
+    updated: 'Registro actualizado exitosamente',
+    created: 'Registro creado exitosamente',
+    session_expired: 'Tu sesión ha finalizado, intenta volver a iniciar sesión',
+    generic_error: 'Ocurrió un error, intentalo más tarde',
 };
 
 export const translate = (key) => {

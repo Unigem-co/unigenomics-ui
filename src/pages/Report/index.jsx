@@ -20,10 +20,12 @@ import {
 	Backdrop,
 	Fade,
 	Stack,
-	TextField
+	TextField,
+	Tooltip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import PageContainer from '../../components/PageContainer';
 import { translate } from '../../utils/translations';
 
@@ -34,15 +36,17 @@ const GENOTYPES = 'genotype';
 
 const dependencies = {
 	document_type: {
-		displayValue: 'value',
+		displayValue: 'display',
 		data: [
 			{
 				id: 'C.C',
 				value: 'C.C',
+				display: 'C.C'
 			},
 			{
 				id: 'Pasaporte',
 				value: 'Pasaporte',
+				display: 'Pasaporte'
 			},
 		],
 	},
@@ -52,32 +56,48 @@ const schema = [
 	{
 		column_name: 'document_type',
 		type: 'select',
-		grid: { xs: 12, sm: 4 }
+		grid: { xs: 12, sm: 4 },
+		label: translate('document_type'),
+		required: true,
+		renderValue: (value) => {
+			const option = dependencies.document_type.data.find(opt => opt.id === value);
+			return option ? option.display : value;
+		}
 	},
 	{
 		column_name: 'document',
 		type: 'text',
-		grid: { xs: 12, sm: 8 }
+		grid: { xs: 12, sm: 8 },
+		label: translate('document'),
+		required: true
 	},
 	{
 		column_name: 'name',
 		type: 'text',
-		grid: { xs: 12 }
+		grid: { xs: 12 },
+		label: translate('name'),
+		required: true
 	},
 	{
 		column_name: 'last_names',
 		type: 'text',
-		grid: { xs: 12 }
+		grid: { xs: 12 },
+		label: translate('last_names'),
+		required: true
 	},
 	{
 		column_name: 'birth_date',
 		type: 'date',
-		grid: { xs: 12 }
+		grid: { xs: 12 },
+		label: translate('birth_date'),
+		required: true
 	},
 	{
 		column_name: 'prime_id',
 		type: 'text',
-		grid: { xs: 12 }
+		grid: { xs: 12 },
+		label: translate('prime_id'),
+		required: true
 	}
 ];
 
@@ -98,10 +118,10 @@ const Report = () => {
 	const [referenceSNPs, setReferenceSNPs] = useState([]);
 	const [, setSnackbar] = useSnackbar();
 
-	const showSnackbarMessage = (className, message) => {
+	const showSnackbarMessage = (className, messageKey) => {
 		setSnackbar({
 			show: true,
-			message,
+			message: translate(messageKey),
 			className
 		});
 	};
@@ -114,7 +134,11 @@ const Report = () => {
 				setUsers(response);
 			} catch (error) {
 				console.error('Error fetching users:', error);
-				showSnackbarMessage('error', translate('error_loading_users'));
+				setSnackbar({
+					show: true,
+					message: translate('error_loading_users'),
+					className: 'error'
+				});
 			} finally {
 				setLoading(false);
 			}
@@ -127,13 +151,11 @@ const Report = () => {
 		const fetchReferenceSNPs = async () => {
 			try {
 				setLoading(true);
-				// Fetch reference SNPs with their available genotypes in a single request
 				const snpsResponse = await request(REFERENCE_SNP);
 				if (!snpsResponse || !Array.isArray(snpsResponse)) {
 					throw new Error('Invalid SNPs response format');
 				}
 
-				// Transform the response to match the expected format and ensure genotypes array exists
 				const snpsWithGenotypes = snpsResponse.map(snp => ({
 					...snp,
 					genotypes: Array.isArray(snp.genotypes) ? snp.genotypes.map(g => ({
@@ -145,8 +167,12 @@ const Report = () => {
 				setReferenceSNPs(snpsWithGenotypes);
 			} catch (error) {
 				console.error('Error fetching reference SNPs:', error);
-				showSnackbarMessage('error', translate('error_loading_reference_snps'));
-				setReferenceSNPs([]); // Set empty array on error
+				setSnackbar({
+					show: true,
+					message: translate('error_loading_reference_snps'),
+					className: 'error'
+				});
+				setReferenceSNPs([]);
 			} finally {
 				setLoading(false);
 			}
@@ -161,7 +187,11 @@ const Report = () => {
 			setReports(response);
 		} catch (error) {
 			console.error('Error fetching reports:', error);
-			showSnackbarMessage('error', translate('error_loading_reports'));
+			setSnackbar({
+				show: true,
+				message: translate('error_loading_reports'),
+				className: 'error'
+			});
 			setReports([]);
 		}
 	};
@@ -175,7 +205,6 @@ const Report = () => {
 	};
 
 	const onReportCreated = async () => {
-		// Refresh the reports list for the current user
 		if (selectedUser) {
 			await fetchUserReports(selectedUser);
 		}
@@ -188,29 +217,48 @@ const Report = () => {
 			setLoading(true);
 			const blob = await generateReport(row.id);
 			
-			// Create a blob URL and open in new window
 			const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
 			
-			// Open PDF in new window
+			// Get user info
+			const user = users.find(u => u.id === selectedUser);
+			
+			// Format the report date
+			const reportDate = new Date(row.report_date);
+			const formattedDate = reportDate.toLocaleDateString('es-ES', {
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit'
+			}).replace(/\//g, '-');
+			
+			// Create filename: document_DDMMYYYY.pdf
+			const fileName = `${user.document}_${formattedDate}.pdf`;
+			
 			const newWindow = window.open();
 			if (newWindow) {
 				newWindow.document.write(
 					`<iframe src="${blobUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
 				);
 			} else {
-				// If popup blocked, create a download link
 				const link = document.createElement('a');
 				link.href = blobUrl;
-				link.download = `report-${row.id}.pdf`;
+				link.download = fileName;
 				link.click();
 			}
 			
 			setFileUrl(blobUrl);
 			setReportGenerated(true);
-			showSnackbarMessage('success', translate('report_generated'));
+			setSnackbar({
+				show: true,
+				message: translate('report_generated'),
+				className: 'success'
+			});
 		} catch (error) {
 			console.error('Error generating report:', error);
-			showSnackbarMessage('error', translate('error_generating_report'));
+			setSnackbar({
+				show: true,
+				message: translate('error_generating_report'),
+				className: 'error'
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -221,10 +269,18 @@ const Report = () => {
 			setLoading(true);
 			await request(`${REPORTS}/${deleteRow.id}`, { method: 'DELETE' });
 			setReports(prev => prev.filter(report => report.id !== deleteRow.id));
-			showSnackbarMessage('success', translate('report_deleted'));
+			setSnackbar({
+				show: true,
+				message: translate('report_deleted'),
+				className: 'success'
+			});
 		} catch (error) {
 			console.error('Error deleting report:', error);
-			showSnackbarMessage('error', translate('error_deleting_report'));
+			setSnackbar({
+				show: true,
+				message: translate('error_deleting_report'),
+				className: 'error'
+			});
 		} finally {
 			setLoading(false);
 			setShowModal(false);
@@ -234,23 +290,25 @@ const Report = () => {
 
 	const handleCreateClient = async (clientData) => {
 		try {
-			// Check if user with same document type and number exists
 			const existingUser = users.find(user => 
 				user.document_type === clientData.document_type && 
 				user.document === clientData.document
 			);
 
 			if (existingUser) {
-				showSnackbarMessage('error', translate('client_already_exists'));
+				setSnackbar({
+					show: true,
+					message: translate('client_already_exists'),
+					className: 'error'
+				});
 				return;
 			}
 
-			// Map birth_date to birdth_date for API compatibility and add role
 			const apiData = {
 				...clientData,
-				birdth_date: clientData.birth_date || new Date().toISOString().split('T')[0], // Set today as default if not provided
-				birth_date: undefined, // Remove birth_date as we're using birdth_date
-				role: 'user' // Add user role for clients
+				birdth_date: clientData.birth_date || new Date().toISOString().split('T')[0],
+				birth_date: undefined,
+				role: 'user'
 			};
 
 			setLoading(true);
@@ -259,23 +317,108 @@ const Report = () => {
 				body: JSON.stringify(apiData)
 			});
 			
-			// Add new client to the list and select it
-			setUsers(prev => [...prev, response]);
+			const newUser = {
+				...response,
+				birth_date: response.birdth_date,
+				name: clientData.name,
+				last_names: clientData.last_names,
+				document: clientData.document,
+				document_type: clientData.document_type,
+				prime_id: clientData.prime_id
+			};
+			
+			setUsers(prev => [...prev, newUser]);
 			setSelectedUser(response.id);
 			setShowForm(true);
 			setShowNewClientModal(false);
-			showSnackbarMessage('success', translate('client_created'));
 			
-			// Fetch reports for the new client
+			setSnackbar({
+				show: true,
+				message: translate('client_created'),
+				className: 'success'
+			});
+			
 			await fetchUserReports(response.id);
 		} catch (error) {
 			console.error('Error creating client:', error);
 			if (error.status === 409) {
-				showSnackbarMessage('error', translate('client_already_exists'));
+				setSnackbar({
+					show: true,
+					message: translate('client_already_exists'),
+					className: 'error'
+				});
 			} else if (error.message?.includes('birdth_date')) {
-				showSnackbarMessage('error', translate('birth_date_required'));
+				setSnackbar({
+					show: true,
+					message: translate('birth_date_required'),
+					className: 'error'
+				});
 			} else {
-				showSnackbarMessage('error', translate('error_creating_client'));
+				setSnackbar({
+					show: true,
+					message: translate('error_creating_client'),
+					className: 'error'
+				});
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleUpdateClient = async (clientData) => {
+		try {
+			setLoading(true);
+			const currentUser = users.find(user => user.id === selectedUser);
+			
+			const apiData = {
+				document_type: clientData.document_type,
+				document: currentUser.document,
+				name: clientData.name,
+				last_names: clientData.last_names,
+				birdth_date: clientData.birth_date,
+				prime_id: clientData.prime_id,
+				role: currentUser.role || 'user',
+				email: currentUser.email,
+				password: currentUser.password
+			};
+
+			const response = await request(USERS, {
+				method: 'PUT',
+				body: JSON.stringify(apiData)
+			});
+			
+			setUsers(prev => prev.map(user => 
+				user.id === selectedUser ? {
+					...currentUser,
+					...apiData,
+					name: clientData.name,
+					last_names: clientData.last_names,
+					document_type: clientData.document_type,
+					prime_id: clientData.prime_id,
+					birdth_date: clientData.birth_date,
+					id: selectedUser
+				} : user
+			));
+			
+			setSnackbar({
+				show: true,
+				message: translate('client_updated_successfully'),
+				className: 'success'
+			});
+		} catch (error) {
+			console.error('Error updating client:', error);
+			if (error.message?.includes('birdth_date')) {
+				setSnackbar({
+					show: true,
+					message: translate('birth_date_required'),
+					className: 'error'
+				});
+			} else {
+				setSnackbar({
+					show: true,
+					message: translate('error_updating_client'),
+					className: 'error'
+				});
 			}
 		} finally {
 			setLoading(false);
@@ -336,17 +479,14 @@ const Report = () => {
 					
 					{/* Client Dropdown and Add Button */}
 					<Box sx={{ mb: 3 }}>
-						<Typography variant="subtitle1" sx={{ mb: 2 }}>
-							{translate('select_client')}:
-						</Typography>
 						<Stack direction="row" spacing={1} alignItems="center" sx={{ maxWidth: 600 }}>
 							<FormControl fullWidth>
 								<InputLabel id="user-select-label">{translate('select_client')}</InputLabel>
 								<MuiSelect
-									key={users.length}
+									key={`user-select-${selectedUser}`}
 									labelId="user-select-label"
 									id="user-select"
-									value={selectedUser}
+									value={selectedUser || ''}
 									label={translate('select_client')}
 									onChange={onUserSelected}
 									displayEmpty
@@ -360,10 +500,30 @@ const Report = () => {
 									sx={{ 
 										'& .MuiOutlinedInput-notchedOutline': {
 											borderColor: 'primary.main',
+											borderWidth: '1px',
 										},
 										'&:hover .MuiOutlinedInput-notchedOutline': {
 											borderColor: 'primary.dark',
+											borderWidth: '2px',
 										},
+										'&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+											borderColor: 'primary.main',
+											borderWidth: '2px',
+										},
+										'&.Mui-error .MuiOutlinedInput-notchedOutline': {
+											borderColor: 'error.main',
+										},
+										'& .MuiSelect-select': {
+											'&:focus': {
+												backgroundColor: 'transparent',
+											}
+										},
+										'& .MuiInputLabel-root': {
+											color: 'primary.main',
+											'&.Mui-focused': {
+												color: 'primary.main',
+											}
+										}
 									}}
 									onOpen={() => setSearchTerm('')}
 									MenuProps={{
@@ -433,17 +593,30 @@ const Report = () => {
 							flexDirection: { xs: 'column', md: 'row' },
 							gap: 3,
 							flex: 1,
-							minHeight: 0
+							minHeight: 0,
+							overflowY: 'auto',
+							'&::-webkit-scrollbar': {
+								width: '8px',
+							},
+							'&::-webkit-scrollbar-track': {
+								background: '#f1f1f1',
+								borderRadius: '4px',
+							},
+							'&::-webkit-scrollbar-thumb': {
+								background: '#888',
+								borderRadius: '4px',
+							},
+							'&::-webkit-scrollbar-thumb:hover': {
+								background: '#555',
+							},
 						}}>
 							{/* Client Information */}
 							<Box sx={{ 
 								flex: { xs: '1', md: '0 0 400px' },
 								display: 'flex',
-								flexDirection: 'column'
+								flexDirection: 'column',
+								minHeight: { xs: 'auto', md: '100%' }
 							}}>
-								<Typography variant="h6" sx={{ mb: 2 }}>
-									{translate('client_information')}
-								</Typography>
 								<Paper 
 									variant="outlined"
 									sx={{ 
@@ -469,38 +642,23 @@ const Report = () => {
 										},
 									}}
 								>
+									<Typography variant="h6" sx={{ mb: 2, px: 1 }}>
+										{translate('client_information')}
+									</Typography>
 									<Form
-										disabled
-										schema={schema}
+										schema={schema.map(field => ({
+											...field,
+											disabled: (field.column_name === 'document_type' || field.column_name === 'document') ? true : undefined
+										}))}
 										data={{
 											...users.find(user => user.id === selectedUser),
 											birth_date: users.find(user => user.id === selectedUser)?.birdth_date,
 										}}
 										dependencies={dependencies}
 										stackFields={true}
+										onSave={handleUpdateClient}
 									/>
 								</Paper>
-								<Box sx={{ 
-									display: 'flex', 
-									justifyContent: 'flex-end', 
-									pt: 2
-								}}>
-									<Button
-										variant="contained"
-										color="primary"
-										onClick={() => {
-											setShowCreateReportDetail(true);
-											setSelectedReport(null);
-										}}
-										sx={{
-											background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-											color: 'white',
-											boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-										}}
-									>
-										{translate('create_new_report')}
-									</Button>
-								</Box>
 							</Box>
 							
 							{/* Reports List */}
@@ -508,17 +666,16 @@ const Report = () => {
 								flex: 1,
 								display: 'flex',
 								flexDirection: 'column',
-								minWidth: 0
+								minWidth: 0,
+								minHeight: { xs: 'auto', md: '100%' }
 							}}>
-								<Typography variant="h6" sx={{ mb: 2 }}>
-									{translate('available_reports')}
-								</Typography>
 								<Paper 
 									variant="outlined"
 									sx={{ 
 										p: 2,
 										flex: 1,
-										overflowY: 'auto',
+										display: 'flex',
+										flexDirection: 'column',
 										minHeight: 0,
 										'&::-webkit-scrollbar': {
 											width: '8px',
@@ -536,46 +693,78 @@ const Report = () => {
 										},
 									}}
 								>
-									{reports?.length > 0 ? (
-										<Table
-											data={reports}
-											columns={Object.keys(reports[0])
-												.filter(key => key !== 'observations')
-												.map(key => ({ 
-													column_name: key,
-													display_name: translate(key)
-												}))
-											}
-											onUpdate={value => {
-												setSelectedReport(value);
-												setShowCreateReportDetail(true);
-												setReportGenerated(false);
-											}}
-											onDelete={value => {
-												setShowModal(true);
-												setDeleteRow(value);
-											}}
-											extraOptions={[
-												{
-													title: translate('generate_report'),
-													onClick: onGenerateReport,
-													icon: 'bi bi-eye',
-												},
-											]}
-										/>
-									) : (
-										<Box sx={{ 
-											display: 'flex', 
-											alignItems: 'center', 
-											justifyContent: 'center',
-											height: '200px',
-											color: 'text.secondary'
-										}}>
-											<Typography>
-												{translate('no_reports_available')}
-											</Typography>
-										</Box>
-									)}
+									<Box sx={{ 
+										display: 'flex',
+										justifyContent: 'space-between',
+										alignItems: 'center',
+										mb: 2,
+										px: 1
+									}}>
+										<Typography variant="h6">
+											{translate('available_reports')}
+										</Typography>
+										<Tooltip title={translate('create_new_report')}>
+											<IconButton
+												onClick={() => {
+													setShowCreateReportDetail(true);
+													setSelectedReport(null);
+												}}
+												sx={{
+													bgcolor: 'primary.main',
+													color: 'white',
+													'&:hover': {
+														bgcolor: 'primary.dark',
+													},
+													width: 40,
+													height: 40,
+												}}
+											>
+												<AddIcon />
+											</IconButton>
+										</Tooltip>
+									</Box>
+									<Box sx={{ flex: 1, overflowY: 'auto' }}>
+										{reports?.length > 0 ? (
+											<Table
+												data={reports}
+												columns={Object.keys(reports[0])
+													.filter(key => key !== 'observations')
+													.map(key => ({ 
+														column_name: key,
+														display_name: translate(key)
+													}))
+												}
+												onUpdate={value => {
+													setSelectedReport(value);
+													setShowCreateReportDetail(true);
+													setReportGenerated(false);
+												}}
+												onDelete={value => {
+													setShowModal(true);
+													setDeleteRow(value);
+												}}
+												extraOptions={[
+													{
+														title: translate('generate_report'),
+														onClick: onGenerateReport,
+														icon: <VisibilityIcon fontSize="small" sx={{ color: 'primary.main' }} />
+													},
+												]}
+											/>
+										) : (
+											<Box sx={{ 
+												display: 'flex', 
+												alignItems: 'center', 
+												justifyContent: 'center',
+												height: '200px',
+												color: 'text.secondary'
+											}}>
+												<Typography>
+													{translate('no_reports_available')}
+												</Typography>
+											</Box>
+										)}
+									</Box>
 								</Paper>
 							</Box>
 						</Box>

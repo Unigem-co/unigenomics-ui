@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
 	Drawer,
@@ -27,15 +27,22 @@ import {
 	ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from '../Snackbar/context';
+import { translate } from '../../utils/translations';
 
 const drawerWidth = 240;
 
-function SideMenu() {
+function SideMenu({ mobileOpen, onMobileClose, isMobile }) {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [showModal, setShowModal] = useState(false);
-	const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(!isMobile);
 	const [, setSnackbar] = useSnackbar();
+
+	useEffect(() => {
+		if (isMobile) {
+			setOpen(false);
+		}
+	}, [isMobile]);
 
 	const actions = [
 		{
@@ -74,7 +81,11 @@ function SideMenu() {
 	];
 
 	const handleDrawerToggle = () => {
-		setOpen(!open);
+		if (isMobile) {
+			onMobileClose?.();
+		} else {
+			setOpen(!open);
+		}
 	};
 
 	const logout = () => {
@@ -82,8 +93,8 @@ function SideMenu() {
 		navigate('/login', { replace: true });
 		setSnackbar({
 			show: true,
-			message: 'Sesión terminada',
-			className: 'success',
+			message: translate('session_expired'),
+			className: 'info'
 		});
 		setShowModal(false);
 	};
@@ -142,135 +153,153 @@ function SideMenu() {
 		</>
 	);
 
-	return (
+	const drawer = (
 		<>
-			<Drawer
-				variant="permanent"
+			<Box
 				sx={{
-					width: open ? drawerWidth : 72,
-					flexShrink: 0,
-					'& .MuiDrawer-paper': {
-						width: open ? drawerWidth : 72,
-						boxSizing: 'border-box',
-						transition: (theme) =>
-							theme.transitions.create(['width'], {
-								easing: theme.transitions.easing.sharp,
-								duration: theme.transitions.duration.enteringScreen,
-							}),
-						overflowX: 'hidden',
-						background: 'linear-gradient(180deg, #004A93 0%, #003366 100%)',
-						color: '#ffffff',
-						border: 'none',
-						position: 'relative'
-					},
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					p: 2,
+					backgroundColor: 'rgba(255,255,255,0.1)',
 				}}
 			>
-				<Box
+				{(open || isMobile) && (
+					<img
+						src="https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png"
+						alt="unigem-logo"
+						style={{ 
+							height: 40, 
+							width: 'auto', 
+							filter: 'brightness(0) invert(1)',
+							maxWidth: '100%'
+						}}
+					/>
+				)}
+				<IconButton
+					onClick={handleDrawerToggle}
 					sx={{
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'space-between',
-						p: 2,
-						backgroundColor: 'rgba(255,255,255,0.1)',
+						color: '#ffffff',
+						'&:hover': {
+							backgroundColor: 'rgba(255,255,255,0.08)',
+						},
 					}}
 				>
-					{open && (
-						<img
-							src="https://unigem.co/wp-content/uploads/2014/09/cropped-cropped-logo-unigem.png"
-							alt="unigem-logo"
-							style={{ height: 40, width: 'auto', filter: 'brightness(0) invert(1)' }}
-						/>
-					)}
-					<IconButton
-						onClick={handleDrawerToggle}
-						sx={{
-							color: '#ffffff',
-							'&:hover': {
-								backgroundColor: 'rgba(255,255,255,0.08)',
-							},
-						}}
-					>
-						{open ? <ChevronLeftIcon /> : <MenuIcon />}
-					</IconButton>
-				</Box>
-				<Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
-				
-				{open && (
-					<>
-						<MenuSection title="Acciones" items={actions} />
-						<MenuSection title="Configuraciones" items={configurations} />
-					</>
-				)}
-				
-				<Box sx={{ flexGrow: 1 }} />
-				<List>
-					<ListItem
-						button
-						onClick={() => setShowModal(true)}
-						sx={{
-							mx: 1,
-							borderRadius: 1,
-							color: '#ffffff',
-							'&:hover': {
-								backgroundColor: 'rgba(255,255,255,0.08)',
-							},
-						}}
-					>
-						<ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-							<ExitToAppIcon />
-						</ListItemIcon>
-						{open && (
+					{(open || isMobile) ? <ChevronLeftIcon /> : <MenuIcon />}
+				</IconButton>
+			</Box>
+			<Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
+			
+			{(open || isMobile) && (
+				<>
+					<MenuSection title="Acciones" items={actions} />
+					<MenuSection title="Configuraciones" items={configurations} />
+					<Box sx={{ flexGrow: 1 }} />
+					<List>
+						<ListItem
+							button
+							onClick={() => setShowModal(true)}
+							sx={{
+								mx: 1,
+								borderRadius: 1,
+								mb: 0.5,
+								'&:hover': {
+									backgroundColor: 'rgba(255,255,255,0.08)',
+								},
+							}}
+						>
+							<ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+								<ExitToAppIcon />
+							</ListItemIcon>
 							<ListItemText
-								primary="Cerrar sesión"
+								primary="Cerrar Sesión"
 								primaryTypographyProps={{
 									fontSize: '0.875rem',
 									fontWeight: 500,
-					}}
-				/>
+								}}
+							/>
+						</ListItem>
+					</List>
+				</>
 			)}
-					</ListItem>
-				</List>
-			</Drawer>
+		</>
+	);
 
+	return (
+		<>
+			{isMobile ? (
+				<Drawer
+					variant="temporary"
+					anchor="left"
+					open={mobileOpen}
+					onClose={onMobileClose}
+					ModalProps={{
+						keepMounted: true, // Better open performance on mobile.
+					}}
+					sx={{
+						'& .MuiDrawer-paper': {
+							width: drawerWidth,
+							boxSizing: 'border-box',
+							background: 'linear-gradient(180deg, #004A93 0%, #003366 100%)',
+							color: '#ffffff',
+							border: 'none',
+							height: '100%',
+							zIndex: (theme) => theme.zIndex.drawer + 2
+						},
+					}}
+				>
+					{drawer}
+				</Drawer>
+			) : (
+				<Drawer
+					variant="permanent"
+					sx={{
+						width: open ? drawerWidth : 72,
+						flexShrink: 0,
+						position: 'relative',
+						'& .MuiDrawer-paper': {
+							width: open ? drawerWidth : 72,
+							boxSizing: 'border-box',
+							transition: (theme) =>
+								theme.transitions.create(['width'], {
+									easing: theme.transitions.easing.sharp,
+									duration: theme.transitions.duration.enteringScreen,
+								}),
+							overflowX: 'hidden',
+							background: 'linear-gradient(180deg, #004A93 0%, #003366 100%)',
+							color: '#ffffff',
+							border: 'none',
+							position: 'relative',
+							height: '100%'
+						},
+						'& .MuiPaper-root': {
+							position: 'relative'
+						}
+					}}
+				>
+					{drawer}
+				</Drawer>
+			)}
 			<Dialog
 				open={showModal}
 				onClose={() => setShowModal(false)}
-				PaperProps={{
-					sx: {
-						borderRadius: 2,
-					},
+				aria-labelledby="alert-dialog-title"
+				sx={{
+					'& .MuiDialog-paper': {
+						width: isMobile ? '90%' : 'auto',
+						margin: isMobile ? '16px' : 'auto'
+					}
 				}}
 			>
-				<DialogTitle sx={{ color: '#004A93', fontWeight: 600 }}>
-					Salir
+				<DialogTitle id="alert-dialog-title">
+					¿Está seguro que desea cerrar sesión?
 				</DialogTitle>
-				<DialogContent>
-					<Typography>¿Deseas cerrar la sesión?</Typography>
-				</DialogContent>
-				<DialogActions sx={{ p: 2 }}>
-					<Button
-						onClick={() => setShowModal(false)}
-						sx={{
-							color: '#666666',
-							'&:hover': {
-								backgroundColor: 'rgba(0,0,0,0.04)',
-							},
-						}}
-					>
+				<DialogActions>
+					<Button onClick={() => setShowModal(false)} color="primary">
 						Cancelar
 					</Button>
-					<Button
-						onClick={logout}
-						variant="contained"
-						color="primary"
-						sx={{
-							background: 'linear-gradient(45deg, #004A93 30%, #00B5E2 90%)',
-							'&:hover': {
-								background: 'linear-gradient(45deg, #003366 30%, #007d99 90%)',
-							},
-						}}
-					>
-						Cerrar sesión
+					<Button onClick={logout} color="primary" autoFocus>
+						Aceptar
 					</Button>
 				</DialogActions>
 			</Dialog>

@@ -5,15 +5,53 @@ import {
 	IconButton,
 	Tooltip,
 	Typography,
-	CircularProgress
+	CircularProgress,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogActions,
+	Button,
+	useTheme,
+	useMediaQuery
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { translate } from '../../utils/translations';
 import SearchInput from '../SearchInput';
 import ActionButton from '../ActionButton';
+
+const TextDialog = ({ open, onClose, title, content }) => (
+	<Dialog 
+		open={open} 
+		onClose={onClose}
+		maxWidth="md"
+		fullWidth
+	>
+		<DialogTitle>{title}</DialogTitle>
+		<DialogContent dividers>
+			<Typography
+				sx={{
+					whiteSpace: 'pre-wrap',
+					lineHeight: '1.6',
+					fontSize: '1rem',
+					padding: '16px',
+					backgroundColor: 'background.paper',
+					borderRadius: 1
+				}}
+			>
+				{content}
+			</Typography>
+		</DialogContent>
+		<DialogActions>
+			<Button onClick={onClose} color="primary">
+				Cerrar
+			</Button>
+		</DialogActions>
+	</Dialog>
+);
 
 const Table = ({ 
 	data = [], 
@@ -29,6 +67,9 @@ const Table = ({
 }) => {
 	const [pageSize, setPageSize] = useState(10);
 	const [searchTerm, setSearchTerm] = useState('');
+	const [textDialog, setTextDialog] = useState({ open: false, title: '', content: '' });
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
 	// Ensure each row has a unique ID
 	const processedData = React.useMemo(() => {
@@ -50,17 +91,38 @@ const Table = ({
 		headerName: 'Acciones',
 		sortable: false,
 		filterable: false,
-		width: 150,
+		width: isMobile ? 140 : 160,
+		minWidth: isMobile ? 140 : 160,
+		maxWidth: isMobile ? 140 : 160,
+		align: 'center',
+		headerAlign: 'center',
+		resizable: false,
+		hideable: false,
 		renderCell: (params) => (
-			<Box sx={{ display: 'flex', gap: 1 }}>
+			<Box sx={{ 
+				display: 'flex', 
+				gap: 0.5,
+				flexWrap: 'nowrap',
+				justifyContent: 'center',
+				alignItems: 'center',
+				width: '100%',
+				height: '100%',
+				bgcolor: 'background.paper'
+			}}>
 				{onUpdate && (
 					<Tooltip title={onUpdateTooltip || translate('edit')}>
 						<IconButton 
 							size="small"
 							onClick={() => onUpdate(params.row)}
-							sx={{ color: 'primary.main' }}
+							sx={{ 
+								color: 'primary.main',
+								padding: isMobile ? '4px' : '8px',
+								'&:hover': {
+									backgroundColor: 'action.hover'
+								}
+							}}
 						>
-							<EditIcon />
+							<EditIcon fontSize={isMobile ? 'small' : 'medium'} />
 						</IconButton>
 					</Tooltip>
 				)}
@@ -69,9 +131,15 @@ const Table = ({
 						<IconButton
 							size="small"
 							onClick={() => onDelete(params.row)}
-							sx={{ color: 'error.main' }}
+							sx={{ 
+								color: 'error.main',
+								padding: isMobile ? '4px' : '8px',
+								'&:hover': {
+									backgroundColor: 'action.hover'
+								}
+							}}
 						>
-							<DeleteIcon />
+							<DeleteIcon fontSize={isMobile ? 'small' : 'medium'} />
 						</IconButton>
 					</Tooltip>
 				)}
@@ -80,9 +148,18 @@ const Table = ({
 						<IconButton
 							size="small"
 							onClick={() => option.onClick(params.row)}
-							sx={{ color: 'primary.main' }}
+							sx={{ 
+								color: 'primary.main',
+								padding: isMobile ? '4px' : '8px',
+								'&:hover': {
+									backgroundColor: 'action.hover'
+								}
+							}}
 						>
-							<i className={option.icon}></i>
+							{React.isValidElement(option.icon) ? 
+								option.icon : 
+								<i className={option.icon} style={{ fontSize: isMobile ? '1rem' : '1.25rem' }}></i>
+							}
 						</IconButton>
 					</Tooltip>
 				))}
@@ -91,29 +168,22 @@ const Table = ({
 	};
 
 	const getColumnConfig = (col) => {
-		// Get the column name from either column_name or name property
 		const columnName = col.column_name || col.name;
-		
-		// Get the display name from either display_name or translate the column name
 		const headerName = col.display_name || translate(columnName);
-		
-		console.log('Processing column:', columnName, 'with data:', col);
-
-		// Ensure field is always set and valid
 		const fieldName = columnName || `column_${Math.random().toString(36).substr(2, 9)}`;
 
-		// Base column configuration for MUI X DataGrid
 		const baseColumn = {
 			field: fieldName,
 			headerName: headerName,
 			flex: col.config?.flex || 1,
-			minWidth: col.config?.minWidth || 150,
+			minWidth: isMobile ? (col.config?.minWidth || 150) * 0.8 : col.config?.minWidth || 150,
 			sortable: col.config?.sortable !== false,
 			filterable: col.config?.filterable !== false,
-			resizable: true
+			resizable: true,
+			headerAlign: 'left',
+			align: 'left'
 		};
 
-		// Handle different column types
 		switch (col.type?.toLowerCase()) {
 			case 'date':
 				return {
@@ -122,7 +192,10 @@ const Table = ({
 					renderCell: (params) => {
 						if (!params?.row?.[fieldName]) return '-';
 						try {
-							return new Date(params.row[fieldName]).toLocaleString('es-ES');
+							const date = new Date(params.row[fieldName]);
+							return isMobile 
+								? date.toLocaleDateString('es-ES')
+								: date.toLocaleString('es-ES');
 						} catch (error) {
 							return params.row[fieldName] || '-';
 						}
@@ -131,18 +204,55 @@ const Table = ({
 			case 'text':
 				return {
 					...baseColumn,
-					type: 'string',
-					renderCell: (params) => (
-						<div style={{ 
-							whiteSpace: 'pre-wrap',
-							lineHeight: '1.4',
-							padding: '8px 0',
-							maxHeight: '150px',
-							overflow: 'auto'
-						}}>
-							{params?.row?.[fieldName] || '-'}
-						</div>
-					)
+					minWidth: isMobile ? 200 : 250,
+					flex: 2,
+					renderCell: (params) => {
+						const content = params?.row?.[fieldName] || '-';
+						return (
+							<Box sx={{ 
+								display: 'flex', 
+								alignItems: 'center', 
+								width: '100%',
+								gap: 1
+							}}>
+								<Typography
+									sx={{
+										whiteSpace: 'pre-wrap',
+										overflow: 'hidden',
+										textOverflow: 'ellipsis',
+										display: '-webkit-box',
+										WebkitLineClamp: isMobile ? 2 : 3,
+										WebkitBoxOrient: 'vertical',
+										lineHeight: '1.4',
+										flex: 1,
+										fontSize: isMobile ? '0.75rem' : '0.875rem'
+									}}
+								>
+									{content}
+								</Typography>
+								{content !== '-' && (
+									<Tooltip title="Ver texto completo">
+										<IconButton
+											size="small"
+											onClick={(e) => {
+												e.stopPropagation();
+												setTextDialog({
+													open: true,
+													title: headerName,
+													content: content
+												});
+											}}
+											sx={{ 
+												padding: isMobile ? '4px' : '8px'
+											}}
+										>
+											<FullscreenIcon fontSize={isMobile ? 'small' : 'medium'} />
+										</IconButton>
+									</Tooltip>
+								)}
+							</Box>
+						);
+					}
 				};
 			case 'boolean':
 				return {
@@ -157,12 +267,18 @@ const Table = ({
 			default:
 				return {
 					...baseColumn,
-					type: 'string',
-					renderCell: (params) => {
-						const value = params?.row?.[fieldName];
-						if (value === null || value === undefined) return '-';
-						return value;
-					}
+					renderCell: (params) => (
+						<Typography
+							sx={{
+								fontSize: isMobile ? '0.75rem' : '0.875rem',
+								whiteSpace: 'nowrap',
+								overflow: 'hidden',
+								textOverflow: 'ellipsis'
+							}}
+						>
+							{params.value || '-'}
+						</Typography>
+					)
 				};
 		}
 	};
@@ -190,16 +306,60 @@ const Table = ({
 	}, [processedData, searchTerm]);
 
 	return (
-		<Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
-			{title && (
-				<Typography variant="h5" component="h1" sx={{ px: 2, pt: 2, fontWeight: 500 }}>
-					{title}
-				</Typography>
-			)}
+		<Box sx={{ 
+			height: '100%',
+			width: '100%',
+			display: 'flex',
+			flexDirection: 'column',
+			gap: 2
+		}}>
+			<Box sx={{ 
+				display: 'flex',
+				flexDirection: { xs: 'column', sm: 'row' },
+				gap: { xs: 1, sm: 2 },
+				alignItems: { xs: 'stretch', sm: 'center' },
+				justifyContent: 'space-between',
+				p: { xs: 1, sm: 2 }
+			}}>
+				{title && (
+					<Typography variant="h6" component="h2" sx={{ 
+						color: 'text.primary',
+						fontSize: { xs: '1.125rem', sm: '1.25rem' }
+					}}>
+						{title}
+					</Typography>
+				)}
+				<Box sx={{ 
+					display: 'flex',
+					gap: 1,
+					flexDirection: { xs: 'column', sm: 'row' },
+					alignItems: { xs: 'stretch', sm: 'center' }
+				}}>
+					<SearchInput
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						placeholder={translate('search')}
+						sx={{ minWidth: { xs: '100%', sm: 200 } }}
+					/>
+					{onCreate && (
+						<ActionButton
+							onClick={onCreate}
+							startIcon={<AddIcon />}
+							sx={{ 
+								whiteSpace: 'nowrap',
+								width: { xs: '100%', sm: 'auto' }
+							}}
+						>
+							{translate('create')}
+						</ActionButton>
+					)}
+				</Box>
+			</Box>
+
 			<Paper
-				elevation={0}
 				sx={{
-					flex: 1,
+					height: 'calc(100% - 80px)',
+					width: '100%',
 					overflow: 'hidden',
 					borderRadius: 2,
 					'& .MuiDataGrid-root': {
@@ -208,11 +368,11 @@ const Table = ({
 							borderColor: 'divider'
 						},
 						'& .MuiDataGrid-columnHeaders': {
-							bgcolor: 'background.neutral',
-							borderRadius: 0
+							borderColor: 'divider',
+							bgcolor: 'background.default'
 						},
-						'& .MuiDataGrid-virtualScroller': {
-							bgcolor: 'background.paper'
+						'& .MuiDataGrid-footerContainer': {
+							borderColor: 'divider'
 						}
 					}
 				}}
@@ -220,63 +380,61 @@ const Table = ({
 				<DataGrid
 					rows={filteredData}
 					columns={gridColumns}
+					pageSize={pageSize}
+					onPageSizeChange={setPageSize}
+					rowsPerPageOptions={[5, 10, 20, 50]}
+					getRowId={(row) => row._uniqueId}
+					disableSelectionOnClick
+					loading={isLoading}
 					initialState={{
-						pagination: {
-							paginationModel: { pageSize: pageSize }
+						pinnedColumns: {
+							right: ['actions']
 						}
 					}}
-					pageSizeOptions={[5, 10, 25, 50]}
-					pagination
-					disableRowSelectionOnClick
-					disableColumnMenu
-					getRowId={(row) => row._uniqueId}
-					loading={isLoading}
-					slots={{
-						toolbar: () => (
-							<Box sx={{ p: 2 }}>
-								<SearchInput
-									placeholder="Buscar..."
-									value={searchTerm}
-									onChange={(e) => setSearchTerm(e.target.value)}
-								/>
-							</Box>
-						),
-						loadingOverlay: () => (
-							<Box sx={{ 
-								display: 'flex', 
-								alignItems: 'center', 
-								justifyContent: 'center',
-								height: '100%',
-								width: '100%',
-								position: 'absolute',
-								top: 0,
-								left: 0,
-								backgroundColor: 'rgba(255, 255, 255, 0.7)',
-								zIndex: 1
-							}}>
-								<CircularProgress />
-							</Box>
-						),
-						noRowsOverlay: () => (
-							<Box sx={{ 
-								display: 'flex', 
-								alignItems: 'center', 
+					components={{
+						LoadingOverlay: () => (
+							<Box sx={{
+								display: 'flex',
+								alignItems: 'center',
 								justifyContent: 'center',
 								height: '100%'
 							}}>
-								No hay datos disponibles
+								<CircularProgress />
 							</Box>
 						)
 					}}
 					sx={{
 						'& .MuiDataGrid-cell': {
-							whiteSpace: 'normal',
-							lineHeight: 'normal',
-							padding: 1
+							fontSize: isMobile ? '0.75rem' : '0.875rem',
+							py: isMobile ? 1 : 2
+						},
+						'& .MuiDataGrid-columnHeader': {
+							fontSize: isMobile ? '0.75rem' : '0.875rem',
+							py: isMobile ? 1 : 2
+						},
+						'& .MuiDataGrid-columnHeader--moving': {
+							backgroundColor: 'background.paper'
+						},
+						'& .MuiDataGrid-cell--pinned': {
+							backgroundColor: 'background.paper',
+							borderLeft: '1px solid',
+							borderLeftColor: 'divider'
+						},
+						'& .MuiDataGrid-columnHeader--pinned': {
+							backgroundColor: 'background.paper',
+							borderLeft: '1px solid',
+							borderLeftColor: 'divider'
 						}
 					}}
 				/>
 			</Paper>
+
+			<TextDialog
+				open={textDialog.open}
+				onClose={() => setTextDialog({ open: false, title: '', content: '' })}
+				title={textDialog.title}
+				content={textDialog.content}
+			/>
 		</Box>
 	);
 };
